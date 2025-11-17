@@ -19,7 +19,6 @@ export default function GeneratorPage() {
           <p className="mt-4 text-sm text-gray-500">Loading…</p>
         </div>
       }>
-        {/* @ts-expect-error Async Server Component */}
         <GenerateResumeForm />
       </Suspense>
     </div>

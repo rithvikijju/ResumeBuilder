@@ -18,7 +18,7 @@ function SubmitButton() {
 }
 
 const initialState = {
-  status: "idle" as const,
+  status: "success" as const,
   message: "",
 };
 
@@ -26,7 +26,7 @@ type ProjectFormState = typeof initialState;
 
 export function ProjectForm() {
   const formRef = useRef<HTMLFormElement>(null);
-  const [state, formAction] = useActionState<ProjectFormState>(
+  const [state, formAction] = useActionState(
     createProject,
     initialState
   );

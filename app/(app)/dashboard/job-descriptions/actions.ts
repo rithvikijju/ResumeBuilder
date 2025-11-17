@@ -42,7 +42,6 @@ const jobDescriptionSchema = z.object({
 });
 
 type ActionState =
-  | { status: "idle" }
   | { status: "success"; message: string }
   | { status: "error"; message: string };
 
@@ -79,7 +78,7 @@ export async function createJobDescription(
   const { roleTitle, company, location, seniority, sourceUrl, jobText, keywords } =
     parsed.data;
 
-  const { error } = await supabase.from("job_descriptions").insert({
+  const { error } = await (supabase.from("job_descriptions") as any).insert({
     user_id: user.id,
     role_title: roleTitle || null,
     company: company || null,

@@ -136,7 +136,6 @@ export default function ProjectsPage() {
           Saved projects
         </h2>
         <Suspense fallback={<p className="text-sm text-slate-500">Loading…</p>}>
-          {/* @ts-expect-error Async Server Component */}
           <ProjectList />
         </Suspense>
       </div>

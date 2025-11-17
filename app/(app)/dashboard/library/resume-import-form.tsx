@@ -7,11 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
 type ImportState =
-  | { status: "idle" }
   | { status: "success"; message: string }
   | { status: "error"; message: string };
 
-const initialState: ImportState = { status: "idle" };
+const initialState: ImportState = { status: "success", message: "" };
 
 function SubmitButton() {
   const { pending } = useFormStatus();

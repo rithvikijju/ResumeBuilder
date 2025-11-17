@@ -243,7 +243,6 @@ export default function ResumeLibraryPage() {
       <ResumeImportForm />
 
       <Suspense fallback={<p className="text-sm text-slate-500">Loading…</p>}>
-        {/* @ts-expect-error Async Server Component */}
         <ResumeLibraryList />
       </Suspense>
     </div>

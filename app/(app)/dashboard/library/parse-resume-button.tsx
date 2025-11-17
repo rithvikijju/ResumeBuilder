@@ -10,11 +10,10 @@ type ParseResumeButtonProps = {
 };
 
 type ParseState =
-  | { status: "idle" }
   | { status: "success"; message: string }
   | { status: "error"; message: string };
 
-const initialState: ParseState = { status: "idle" };
+const initialState: ParseState = { status: "success", message: "" };
 
 function SubmitButton() {
   const { pending } = useFormStatus();

@@ -20,7 +20,7 @@ function SubmitButton() {
 }
 
 const initialState = {
-  status: "idle" as const,
+  status: "success" as const,
   message: "",
 };
 

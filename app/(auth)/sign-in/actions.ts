@@ -9,7 +9,7 @@ const signInSchema = z.object({
 });
 
 export async function signInWithMagicLink(
-  _prevState: { status: "idle" | "error" | "success"; message: string },
+  _prevState: { status: "error" | "success"; message: string },
   formData: FormData
 ) {
   const parsed = signInSchema.safeParse({

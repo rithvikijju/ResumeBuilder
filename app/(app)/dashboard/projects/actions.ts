@@ -34,7 +34,7 @@ const projectSchema = z.object({
 });
 
 type ProjectActionState = {
-  status: "idle" | "error" | "success";
+  status: "error" | "success";
   message: string;
 };
 

@@ -14,11 +14,10 @@ type Props = {
 };
 
 type FormState =
-  | { status: "idle" }
   | { status: "success"; message: string }
   | { status: "error"; message: string };
 
-const initialState: FormState = { status: "idle" };
+const initialState: FormState = { status: "success", message: "" };
 
 export function SkillCard({ skill }: Props) {
   const [state, formAction] = useActionState(updateSkillRecord, initialState);

@@ -129,7 +129,6 @@ export default function JobDescriptionsPage() {
           Saved descriptions
         </h2>
         <Suspense fallback={<p className="text-sm text-slate-500">Loading…</p>}>
-          {/* @ts-expect-error Async Server Component */}
           <JobDescriptionList />
         </Suspense>
       </div>

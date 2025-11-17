@@ -231,11 +231,10 @@ const importSchema = z.object({
 });
 
 type ImportState =
-  | { status: "idle" }
   | { status: "success"; message: string }
   | { status: "error"; message: string };
 
-const initialState: ImportState = { status: "idle" };
+const initialState: ImportState = { status: "success", message: "" };
 
 export async function importResumeSource(
   _prevState: ImportState = initialState,
@@ -333,11 +332,10 @@ export async function importResumeSource(
 }
 
 type ParseState =
-  | { status: "idle" }
   | { status: "success"; message: string }
   | { status: "error"; message: string };
 
-const parseInitialState: ParseState = { status: "idle" };
+const parseInitialState: ParseState = { status: "success", message: "" };
 
 export async function parseResumeSource(
   _prevState: ParseState = parseInitialState,
@@ -589,7 +587,7 @@ export async function parseResumeSource(
         } else if (rawSkills && typeof rawSkills === "object") {
           skills = Object.values(rawSkills)
             .flat()
-            .map((item) => item.trim())
+            .map((item: unknown) => String(item).trim())
             .filter(Boolean);
         }
 
@@ -618,12 +616,12 @@ export async function parseResumeSource(
 
           if (Array.isArray(rawSkills)) {
             skills = rawSkills.map((item) => item.trim()).filter(Boolean);
-          } else if (rawSkills && typeof rawSkills === "object") {
-            skills = Object.values(rawSkills)
-              .flat()
-              .map((item) => item.trim())
-              .filter(Boolean);
-          }
+        } else if (rawSkills && typeof rawSkills === "object") {
+          skills = Object.values(rawSkills)
+            .flat()
+            .map((item: unknown) => String(item).trim())
+            .filter(Boolean);
+        }
 
           return {
             user_id: user.id,
@@ -688,11 +686,10 @@ export async function parseResumeSource(
 }
 
 type UpdateState =
-  | { status: "idle" }
   | { status: "success"; message: string }
   | { status: "error"; message: string };
 
-const updateInitialState: UpdateState = { status: "idle" };
+const updateInitialState: UpdateState = { status: "success", message: "" };
 
 const experienceSchema = z.object({
   id: z.string().uuid(),

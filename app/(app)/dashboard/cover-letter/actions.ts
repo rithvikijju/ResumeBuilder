@@ -14,10 +14,11 @@ const coverLetterSchema = z.object({
 });
 
 export type CoverLetterState =
-  | { status: "idle" }
   | { status: "error"; message: string }
+  | { status: "success"; message: string }
   | {
       status: "success";
+      message?: string;
       outline: {
         sections: Array<{
           title: string;
@@ -29,7 +30,7 @@ export type CoverLetterState =
       };
     };
 
-const initialState: CoverLetterState = { status: "idle" };
+const initialState: CoverLetterState = { status: "success", message: "" };
 
 export async function generateCoverLetterOutline(
   _prevState: CoverLetterState = initialState,

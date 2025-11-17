@@ -27,7 +27,7 @@ type GenerateFormClientProps = {
   summary: AutoSummary;
 };
 
-const initialState: GenerateState = { status: "idle" };
+const initialState: GenerateState = { status: "success", message: "" };
 
 function SubmitButton() {
   const { pending } = useFormStatus();

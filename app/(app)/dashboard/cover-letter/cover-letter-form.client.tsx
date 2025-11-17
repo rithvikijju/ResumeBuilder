@@ -13,7 +13,7 @@ type Props = {
   resumes: ResumeRecord[];
 };
 
-const initialState: CoverLetterState = { status: "idle" };
+const initialState: CoverLetterState = { status: "success", message: "" };
 
 function SubmitButton() {
   const { pending } = useFormStatus();

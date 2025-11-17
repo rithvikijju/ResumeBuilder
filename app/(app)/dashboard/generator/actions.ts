@@ -5,7 +5,7 @@ import { z } from "zod";
 import { getOpenAIClient } from "@/lib/openai/client";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ResumeSchema } from "@/lib/resume/schema";
-import type { JobDescription, Database } from "@/types/database";
+import type { JobDescription } from "@/types/database";
 
 const generateSchema = z.object({
   jobDescriptionId: z.string().uuid({
@@ -19,11 +19,10 @@ const generateSchema = z.object({
 });
 
 export type GenerateState =
-  | { status: "idle" }
   | { status: "error"; message: string }
-  | { status: "success"; resumeId: string; message: string };
+  | { status: "success"; resumeId?: string; message: string };
 
-const initialState: GenerateState = { status: "idle" };
+const initialState: GenerateState = { status: "success", message: "", resumeId: undefined };
 
 /**
  * Batch score relevance of multiple items against a job description using AI
@@ -410,9 +409,9 @@ export async function generateResume(
   } catch (error) {
     console.error("OpenAI resume generation failed:", error);
 
-    await supabase
-      .from("resume_activity_log")
-      .insert<Database["public"]["Tables"]["resume_activity_log"]["Insert"]>({
+    await (supabase
+      .from("resume_activity_log") as any)
+      .insert({
         event: "generation_failed",
         metadata: {
           jobDescriptionId,
@@ -430,27 +429,27 @@ export async function generateResume(
     };
   }
 
-  const { data: resume, error: resumeError } = await supabase
-    .from("resumes")
+  const { data: resume, error: resumeError } = await (supabase
+    .from("resumes") as any)
     .insert({
       user_id: user.id,
       title:
         title && title.length
           ? title
-          : `${jobDescription.role_title ?? "Tailored"} Resume`,
+          : `${(jobDescription as JobDescription).role_title ?? "Tailored"} Resume`,
       status: "generated",
       format: "pdf",
       structured_content: structuredResume,
       ai_prompt: {
         jobDescriptionId,
-        projectIds: selectedProjectIds,
-        experienceIds: selectedExperienceIds,
-        educationIds: selectedEducationIds,
-        skillIds: selectedSkillIds,
+        projectIds: selected.projects,
+        experienceIds: selected.experiences,
+        educationIds: selected.education,
+        skillIds: selected.skills,
         prompt,
       },
       ai_response: rawResponse,
-      job_description_id: jobDescription.id,
+      job_description_id: (jobDescription as JobDescription).id,
       job_target_id: null,
     })
     .select()
@@ -464,11 +463,11 @@ export async function generateResume(
     };
   }
 
-    await supabase.from("resume_activity_log").insert({
+    await (supabase.from("resume_activity_log") as any).insert({
       resume_id: resume.id,
       event: "generation_completed",
       metadata: {
-        jobDescriptionId: jobDescription.id,
+        jobDescriptionId: (jobDescription as JobDescription).id,
         projectIds: selected.projects,
         experienceIds: selected.experiences,
         educationIds: selected.education,
