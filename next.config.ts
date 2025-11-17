@@ -7,6 +7,12 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Performance optimizations
+  experimental: {
+    optimizePackageImports: ['@supabase/ssr', '@supabase/supabase-js'],
+  },
+  // Compress responses
+  compress: true,
 };
 
 export default nextConfig;
