@@ -14,7 +14,6 @@ export default function CoverLetterPage() {
       </header>
 
       <Suspense fallback={<p className="text-sm text-slate-500">Loading…</p>}>
-        {/* @ts-expect-error Async Server Component */}
         <CoverLetterForm />
       </Suspense>
     </div>

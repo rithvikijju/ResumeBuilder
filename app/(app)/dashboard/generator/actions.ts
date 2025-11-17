@@ -5,6 +5,7 @@ import { z } from "zod";
 import { getOpenAIClient } from "@/lib/openai/client";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ResumeSchema } from "@/lib/resume/schema";
+import type { JobDescription, Database } from "@/types/database";
 
 const generateSchema = z.object({
   jobDescriptionId: z.string().uuid({
@@ -230,7 +231,7 @@ export async function generateResume(
     .maybeSingle();
 
   // Fetch job description and ALL available data
-  const [{ data: jobDescription }, allProjectsRes, allExperiencesRes, allEducationRes, allSkillsRes] =
+  const [jobDescriptionRes, allProjectsRes, allExperiencesRes, allEducationRes, allSkillsRes] =
     await Promise.all([
       jobDescriptionPromise,
       supabase
@@ -275,9 +276,11 @@ export async function generateResume(
     return { status: "error", message: "Unable to load skill groups." };
   }
 
-  if (!jobDescription) {
+  if (jobDescriptionRes.error || !jobDescriptionRes.data) {
     return { status: "error", message: "Job description not found." };
   }
+
+  const jobDescription = jobDescriptionRes.data;
 
   const allProjects = allProjectsRes?.data ?? [];
   const allExperiences = allExperiencesRes?.data ?? [];
@@ -407,14 +410,19 @@ export async function generateResume(
   } catch (error) {
     console.error("OpenAI resume generation failed:", error);
 
-    await supabase.from("resume_activity_log").insert({
-      event: "generation_failed",
-      metadata: {
-        jobDescriptionId,
-        projectIds,
-        error: error instanceof Error ? error.message : String(error),
-      },
-    });
+    await supabase
+      .from("resume_activity_log")
+      .insert<Database["public"]["Tables"]["resume_activity_log"]["Insert"]>({
+        event: "generation_failed",
+        metadata: {
+          jobDescriptionId,
+          projectIds: selected.projects,
+          experienceIds: selected.experiences,
+          educationIds: selected.education,
+          skillIds: selected.skills,
+          error: error instanceof Error ? error.message : String(error),
+        },
+      });
 
     return {
       status: "error",
@@ -456,17 +464,17 @@ export async function generateResume(
     };
   }
 
-  await supabase.from("resume_activity_log").insert({
-    resume_id: resume.id,
-    event: "generation_completed",
-    metadata: {
-      jobDescriptionId: jobDescription.id,
-      projectIds: selectedProjectIds,
-      experienceIds: selectedExperienceIds,
-      educationIds: selectedEducationIds,
-      skillIds: selectedSkillIds,
-    },
-  });
+    await supabase.from("resume_activity_log").insert({
+      resume_id: resume.id,
+      event: "generation_completed",
+      metadata: {
+        jobDescriptionId: jobDescription.id,
+        projectIds: selected.projects,
+        experienceIds: selected.experiences,
+        educationIds: selected.education,
+        skillIds: selected.skills,
+      },
+    });
 
   revalidatePath("/dashboard/resumes");
 

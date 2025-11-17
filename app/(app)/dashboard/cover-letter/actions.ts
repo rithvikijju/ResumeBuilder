@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getOpenAIClient } from "@/lib/openai/client";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ResumeSchema } from "@/lib/resume/schema";
+import type { ResumeRecord, JobDescription } from "@/types/database";
 
 const coverLetterSchema = z.object({
   jobDescriptionId: z.string().uuid({
@@ -58,29 +59,32 @@ export async function generateCoverLetterOutline(
   const { jobDescriptionId, resumeId } = parsed.data;
 
   // Fetch job description
-  const { data: jobDescription, error: jobError } = await supabase
+  const { data: jobDescriptionData, error: jobError } = await supabase
     .from("job_descriptions")
     .select("*")
     .eq("id", jobDescriptionId)
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (jobError || !jobDescription) {
+  if (jobError || !jobDescriptionData) {
     return { status: "error", message: "Job description not found." };
   }
+
+  const jobDescription = jobDescriptionData as JobDescription;
 
   // Fetch resume if provided
   let resumeData = null;
   if (resumeId) {
     const { data: resume, error: resumeError } = await supabase
       .from("resumes")
-      .select("*, structured_content")
+      .select("*")
       .eq("id", resumeId)
       .eq("user_id", user.id)
       .maybeSingle();
 
     if (!resumeError && resume) {
-      const validation = ResumeSchema.safeParse(resume.structured_content);
+      const resumeRecord = resume as ResumeRecord;
+      const validation = ResumeSchema.safeParse(resumeRecord.structured_content);
       if (validation.success) {
         resumeData = validation.data;
       }
