@@ -1,0 +1,36 @@
+{
+  "name": "resume-builder",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.7.0",
+    "@supabase/supabase-js": "^2.81.1",
+    "clsx": "^2.1.1",
+    "jspdf": "^3.0.3",
+    "mammoth": "^1.11.0",
+    "next": "16.0.2",
+    "openai": "^6.8.1",
+    "pdf-parse": "^2.4.5",
+    "pdfreader": "^3.0.8",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "react-dropzone": "^14.3.8",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.0.2",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
