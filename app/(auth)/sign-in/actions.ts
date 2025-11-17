@@ -25,20 +25,39 @@ export async function signInWithMagicLink(
 
   const supabase = await createSupabaseServerClient();
   const headersList = await headers();
-  const origin = headersList.get("origin");
+  const origin = headersList.get("origin") || headersList.get("host");
+  
+  // Construct redirect URL - handle both localhost and production
+  let redirectUrl: string | undefined;
+  if (origin) {
+    const protocol = origin.includes("localhost") || origin.includes("127.0.0.1") 
+      ? "http" 
+      : "https";
+    const host = origin.startsWith("http") ? origin : `${protocol}://${origin}`;
+    redirectUrl = `${host}/auth/callback`;
+  }
 
   const { error } = await supabase.auth.signInWithOtp({
     email: parsed.data.email,
     options: {
-      emailRedirectTo: origin ? `${origin}/auth/callback` : undefined,
+      emailRedirectTo: redirectUrl,
     },
   });
 
   if (error) {
     console.error("Supabase sign-in error:", error);
+    // Provide more helpful error messages
+    let errorMessage = "Unable to send magic link. Try again shortly.";
+    if (error.message.includes("redirect_to")) {
+      errorMessage = "Redirect URL not configured. Please contact support.";
+    } else if (error.message.includes("rate limit")) {
+      errorMessage = "Too many requests. Please wait a few minutes and try again.";
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
     return {
       status: "error" as const,
-      message: "Unable to send magic link. Try again shortly.",
+      message: errorMessage,
     };
   }
 
