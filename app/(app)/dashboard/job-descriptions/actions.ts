@@ -71,7 +71,7 @@ export async function createJobDescription(
 
   if (!parsed.success) {
     const message =
-      parsed.error.errors[0]?.message ??
+      parsed.error.issues[0]?.message ??
       "Unable to save job description. Check the fields and try again.";
     return { status: "error", message };
   }

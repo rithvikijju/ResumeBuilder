@@ -260,7 +260,7 @@ export async function importResumeSource(
     return {
       status: "error",
       message:
-        parsed.error.errors[0]?.message ??
+        parsed.error.issues[0]?.message ??
         "Unable to import resume. Check the fields and try again.",
     };
   }
@@ -761,7 +761,7 @@ export async function updateExperienceRecord(
 
   if (!parsed.success) {
     const message =
-      parsed.error.errors[0]?.message ?? "Check the form fields and try again.";
+      parsed.error.issues[0]?.message ?? "Check the form fields and try again.";
     return { status: "error", message };
   }
 
@@ -865,7 +865,7 @@ export async function updateEducationRecord(
 
   if (!parsed.success) {
     const message =
-      parsed.error.errors[0]?.message ?? "Check the form fields and try again.";
+      parsed.error.issues[0]?.message ?? "Check the form fields and try again.";
     return { status: "error", message };
   }
 
@@ -958,7 +958,7 @@ export async function updateSkillRecord(
 
   if (!parsed.success) {
     const message =
-      parsed.error.errors[0]?.message ?? "Check the form fields and try again.";
+      parsed.error.issues[0]?.message ?? "Check the form fields and try again.";
     return { status: "error", message };
   }
 

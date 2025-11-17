@@ -216,7 +216,7 @@ export async function generateResume(
 
   if (!parsed.success) {
     const message =
-      parsed.error.errors?.[0]?.message ?? "Check your selection and try again.";
+      parsed.error.issues?.[0]?.message ?? "Check your selection and try again.";
     return { status: "error", message };
   }
 

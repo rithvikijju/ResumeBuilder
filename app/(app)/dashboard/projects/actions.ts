@@ -85,7 +85,7 @@ export async function createProject(
     return {
       status: "error",
       message:
-        parsed.error.errors[0]?.message ??
+        parsed.error.issues[0]?.message ??
         "Unable to save project. Check the input and try again.",
     };
   }
