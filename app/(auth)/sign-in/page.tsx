@@ -1,9 +1,8 @@
 "use client";
 
-import { Suspense, useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import { useFormStatus } from "react-dom";
-import { useSearchParams } from "next/navigation";
 import { signInWithMagicLink } from "./actions";
 
 function SubmitButton() {
@@ -25,44 +24,40 @@ const initialState = {
   message: "",
 };
 
-function ErrorMessage({ state }: { state: { status: "error" | "success"; message: string } }) {
-  const searchParams = useSearchParams();
-  const errorParam = searchParams.get("error");
-  const errorMessage = searchParams.get("message");
-
-  // Determine which error message to display
-  let displayError = state.message;
-  let isError = state.status === "error";
-  
-  if (errorParam === "callback") {
-    displayError = errorMessage || "Authentication failed. Please try again.";
-    isError = true;
-  } else if (errorParam === "missing_code") {
-    displayError = "Invalid magic link. Please request a new one.";
-    isError = true;
-  } else if (errorParam === "session_failed") {
-    displayError = "Session could not be established. Please try again.";
-    isError = true;
-  }
-
-  if (!displayError) return null;
-
-  return (
-    <p
-      className={`text-sm ${
-        isError ? "text-red-600" : "text-emerald-600"
-      }`}
-    >
-      {displayError}
-    </p>
-  );
-}
-
 export default function SignInPage() {
   const [state, formAction] = useActionState(
     signInWithMagicLink,
     initialState
   );
+  const [urlError, setUrlError] = useState<{ error: string; message?: string } | null>(null);
+
+  // Read search params client-side only to avoid SSR issues
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const error = params.get("error");
+      const message = params.get("message");
+      
+      if (error) {
+        setUrlError({ error, message: message || undefined });
+      }
+    }
+  }, []);
+
+  // Determine which error message to display
+  let displayError = state.message;
+  let isError = state.status === "error";
+  
+  if (urlError?.error === "callback") {
+    displayError = urlError.message || "Authentication failed. Please try again.";
+    isError = true;
+  } else if (urlError?.error === "missing_code") {
+    displayError = "Invalid magic link. Please request a new one.";
+    isError = true;
+  } else if (urlError?.error === "session_failed") {
+    displayError = "Session could not be established. Please try again.";
+    isError = true;
+  }
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center gap-8 px-6 py-12">
@@ -99,9 +94,15 @@ export default function SignInPage() {
 
         <SubmitButton />
 
-        <Suspense fallback={null}>
-          <ErrorMessage state={state} />
-        </Suspense>
+        {displayError ? (
+          <p
+            className={`text-sm ${
+              isError ? "text-red-600" : "text-emerald-600"
+            }`}
+          >
+            {displayError}
+          </p>
+        ) : null}
       </form>
 
       <p className="text-center text-sm text-slate-500">
