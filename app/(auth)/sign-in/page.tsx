@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { Suspense, useActionState } from "react";
 import Link from "next/link";
 import { useFormStatus } from "react-dom";
 import { useSearchParams } from "next/navigation";
@@ -25,11 +25,7 @@ const initialState = {
   message: "",
 };
 
-export default function SignInPage() {
-  const [state, formAction] = useActionState(
-    signInWithMagicLink,
-    initialState
-  );
+function ErrorMessage({ state }: { state: { status: "error" | "success"; message: string } }) {
   const searchParams = useSearchParams();
   const errorParam = searchParams.get("error");
   const errorMessage = searchParams.get("message");
@@ -48,6 +44,25 @@ export default function SignInPage() {
     displayError = "Session could not be established. Please try again.";
     isError = true;
   }
+
+  if (!displayError) return null;
+
+  return (
+    <p
+      className={`text-sm ${
+        isError ? "text-red-600" : "text-emerald-600"
+      }`}
+    >
+      {displayError}
+    </p>
+  );
+}
+
+export default function SignInPage() {
+  const [state, formAction] = useActionState(
+    signInWithMagicLink,
+    initialState
+  );
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center gap-8 px-6 py-12">
@@ -84,15 +99,9 @@ export default function SignInPage() {
 
         <SubmitButton />
 
-        {displayError ? (
-          <p
-            className={`text-sm ${
-              isError ? "text-red-600" : "text-emerald-600"
-            }`}
-          >
-            {displayError}
-          </p>
-        ) : null}
+        <Suspense fallback={null}>
+          <ErrorMessage state={state} />
+        </Suspense>
       </form>
 
       <p className="text-center text-sm text-slate-500">
