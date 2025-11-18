@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
 
   if (!code) {
-    return NextResponse.redirect(`${origin}/sign-in?error=missing_code`);
+    return NextResponse.redirect(`${origin}/sign-in?error=missing_code&message=${encodeURIComponent("Invalid confirmation link. Please check your email and try again.")}`);
   }
 
   const { url, anonKey } = getSupabaseKeys();
@@ -57,7 +57,13 @@ export async function GET(request: Request) {
 
   if (error) {
     console.error("Error exchanging auth code:", error);
-    return NextResponse.redirect(`${origin}/sign-in?error=callback&message=${encodeURIComponent(error.message)}`);
+    let errorMessage = error.message;
+    if (error.message.includes("expired")) {
+      errorMessage = "This confirmation link has expired. Please request a new one.";
+    } else if (error.message.includes("invalid")) {
+      errorMessage = "Invalid confirmation link. Please check your email and try again.";
+    }
+    return NextResponse.redirect(`${origin}/sign-in?error=callback&message=${encodeURIComponent(errorMessage)}`);
   }
 
   // Verify session was actually created and cookies are set

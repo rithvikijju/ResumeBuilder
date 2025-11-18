@@ -1,57 +1,44 @@
 "use server";
 
-import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const signInSchema = z.object({
   email: z.string().email("Enter a valid email address."),
+  password: z.string().min(6, "Password must be at least 6 characters."),
 });
 
-export async function signInWithMagicLink(
+export async function signInWithPassword(
   _prevState: { status: "error" | "success"; message: string },
   formData: FormData
 ) {
   const parsed = signInSchema.safeParse({
     email: formData.get("email"),
+    password: formData.get("password"),
   });
 
   if (!parsed.success) {
     return {
       status: "error" as const,
-      message: parsed.error.flatten().formErrors.join(", ") || "Invalid email.",
+      message: parsed.error.flatten().formErrors.join(", ") || "Invalid credentials.",
     };
   }
 
   const supabase = await createSupabaseServerClient();
-  const headersList = await headers();
-  const origin = headersList.get("origin") || headersList.get("host");
-  
-  // Construct redirect URL - handle both localhost and production
-  let redirectUrl: string | undefined;
-  if (origin) {
-    const protocol = origin.includes("localhost") || origin.includes("127.0.0.1") 
-      ? "http" 
-      : "https";
-    const host = origin.startsWith("http") ? origin : `${protocol}://${origin}`;
-    redirectUrl = `${host}/auth/callback`;
-  }
 
-  const { error } = await supabase.auth.signInWithOtp({
+  const { error, data } = await supabase.auth.signInWithPassword({
     email: parsed.data.email,
-    options: {
-      emailRedirectTo: redirectUrl,
-    },
+    password: parsed.data.password,
   });
 
   if (error) {
     console.error("Supabase sign-in error:", error);
-    // Provide more helpful error messages
-    let errorMessage = "Unable to send magic link. Try again shortly.";
-    if (error.message.includes("redirect_to")) {
-      errorMessage = "Redirect URL not configured. Please contact support.";
-    } else if (error.message.includes("rate limit")) {
-      errorMessage = "Too many requests. Please wait a few minutes and try again.";
+    let errorMessage = "Invalid email or password.";
+    if (error.message.includes("Email not confirmed")) {
+      errorMessage = "Please confirm your email address before signing in. Check your inbox for a confirmation link.";
+    } else if (error.message.includes("Invalid login credentials")) {
+      errorMessage = "Invalid email or password.";
     } else if (error.message) {
       errorMessage = error.message;
     }
@@ -61,10 +48,7 @@ export async function signInWithMagicLink(
     };
   }
 
-  return {
-    status: "success" as const,
-    message:
-      "Check your inbox for a magic link. The email is valid for five minutes.",
-  };
+  // Successful sign-in - redirect to dashboard
+  redirect("/dashboard");
 }
 

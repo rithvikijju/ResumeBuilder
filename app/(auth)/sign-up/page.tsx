@@ -1,9 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState } from "react";
 import Link from "next/link";
 import { useFormStatus } from "react-dom";
-import { signInWithPassword } from "./actions";
+import { signUp } from "./actions";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -14,7 +14,7 @@ function SubmitButton() {
       className="inline-flex w-full justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
       disabled={pending}
     >
-      {pending ? "Signing in…" : "Sign in"}
+      {pending ? "Creating account…" : "Create account"}
     </button>
   );
 }
@@ -24,40 +24,8 @@ const initialState = {
   message: "",
 };
 
-export default function SignInPage() {
-  const [state, formAction] = useActionState(
-    signInWithPassword,
-    initialState
-  );
-  const [urlError, setUrlError] = useState<{ error: string; message?: string } | null>(null);
-
-  // Read search params client-side only to avoid SSR issues
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const error = params.get("error");
-      const message = params.get("message");
-      
-      if (error) {
-        setUrlError({ error, message: message || undefined });
-      }
-    }
-  }, []);
-
-  // Determine which error message to display
-  let displayError = state.message;
-  let isError = state.status === "error";
-  
-  if (urlError?.error === "callback") {
-    displayError = urlError.message || "Authentication failed. Please try again.";
-    isError = true;
-  } else if (urlError?.error === "missing_code") {
-    displayError = "Invalid magic link. Please request a new one.";
-    isError = true;
-  } else if (urlError?.error === "session_failed") {
-    displayError = "Session could not be established. Please try again.";
-    isError = true;
-  }
+export default function SignUpPage() {
+  const [state, formAction] = useActionState(signUp, initialState);
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center gap-8 px-6 py-12">
@@ -66,10 +34,10 @@ export default function SignInPage() {
           Focus Resume
         </p>
         <h1 className="text-3xl font-semibold text-slate-900">
-          Sign in to continue
+          Create an account
         </h1>
         <p className="text-sm text-slate-600">
-          Enter your email and password to access your account.
+          Sign up to start building tailored resumes with AI.
         </p>
       </div>
 
@@ -104,29 +72,52 @@ export default function SignInPage() {
             name="password"
             type="password"
             required
-            autoComplete="current-password"
-            placeholder="Enter your password"
+            autoComplete="new-password"
+            placeholder="At least 6 characters"
+            minLength={6}
+            className="block w-full rounded-md border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
+          />
+          <p className="text-xs text-slate-500">
+            Must be at least 6 characters long.
+          </p>
+        </div>
+
+        <div className="space-y-2 text-left">
+          <label
+            htmlFor="confirmPassword"
+            className="block text-sm font-medium text-slate-700"
+          >
+            Confirm Password
+          </label>
+          <input
+            id="confirmPassword"
+            name="confirmPassword"
+            type="password"
+            required
+            autoComplete="new-password"
+            placeholder="Re-enter your password"
+            minLength={6}
             className="block w-full rounded-md border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
           />
         </div>
 
         <SubmitButton />
 
-        {displayError ? (
+        {state.message ? (
           <p
             className={`text-sm ${
-              isError ? "text-red-600" : "text-emerald-600"
+              state.status === "error" ? "text-red-600" : "text-emerald-600"
             }`}
           >
-            {displayError}
+            {state.message}
           </p>
         ) : null}
       </form>
 
       <p className="text-center text-sm text-slate-500">
-        <span>Don't have an account?</span>{" "}
-        <Link href="/sign-up" className="font-medium text-slate-900 underline">
-          Sign up
+        <span>Already have an account?</span>{" "}
+        <Link href="/sign-in" className="font-medium text-slate-900 underline">
+          Sign in
         </Link>
         {" · "}
         <Link href="/" className="font-medium text-slate-900 underline">
