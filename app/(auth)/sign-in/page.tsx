@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { useFormStatus } from "react-dom";
+import { useSearchParams } from "next/navigation";
 import { signInWithMagicLink } from "./actions";
 
 function SubmitButton() {
@@ -29,6 +30,24 @@ export default function SignInPage() {
     signInWithMagicLink,
     initialState
   );
+  const searchParams = useSearchParams();
+  const errorParam = searchParams.get("error");
+  const errorMessage = searchParams.get("message");
+
+  // Determine which error message to display
+  let displayError = state.message;
+  let isError = state.status === "error";
+  
+  if (errorParam === "callback") {
+    displayError = errorMessage || "Authentication failed. Please try again.";
+    isError = true;
+  } else if (errorParam === "missing_code") {
+    displayError = "Invalid magic link. Please request a new one.";
+    isError = true;
+  } else if (errorParam === "session_failed") {
+    displayError = "Session could not be established. Please try again.";
+    isError = true;
+  }
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center gap-8 px-6 py-12">
@@ -65,13 +84,13 @@ export default function SignInPage() {
 
         <SubmitButton />
 
-        {state.message ? (
+        {displayError ? (
           <p
             className={`text-sm ${
-              state.status === "error" ? "text-red-600" : "text-emerald-600"
+              isError ? "text-red-600" : "text-emerald-600"
             }`}
           >
-            {state.message}
+            {displayError}
           </p>
         ) : null}
       </form>

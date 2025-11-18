@@ -4,6 +4,11 @@ import type { Database } from "./types/database";
 import { getSupabaseKeys } from "./lib/supabase/env";
 
 export async function middleware(request: NextRequest) {
+  // Skip middleware for auth callback to avoid interference with cookie setting
+  if (request.nextUrl.pathname === "/auth/callback") {
+    return NextResponse.next();
+  }
+
   const response = NextResponse.next({
     request: {
       headers: request.headers,
