@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAllTemplates } from "@/lib/resume/templates";
 import type {
   JobDescription,
   ProjectRecord,
@@ -69,10 +70,14 @@ export async function GenerateResumeForm() {
     skills: skills, // Show all for count
   };
 
+  // Fetch templates on the server
+  const templates = await getAllTemplates();
+
   return (
     <GenerateFormClient
       jobDescriptions={jobDescriptions}
       summary={summary}
+      templates={templates}
     />
   );
 }

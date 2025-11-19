@@ -351,14 +351,15 @@ export async function generateResume(
     };
   }
 
-  const templateId = parsed.data.templateId;
-  const prompt = await buildPrompt(
+  const template = (await getTemplateById(templateId)) || (await getTemplateById("cs"))!;
+  const prompt = buildPrompt(
     jobDescription,
     projects,
     experiences,
     education,
     skills,
-    templateId
+    templateId,
+    template
   );
   const openai = getOpenAIClient();
 
@@ -490,7 +491,7 @@ export async function generateResume(
   };
 }
 
-async function buildPrompt(
+function buildPrompt(
   jobDescription: {
     role_title: string | null;
     company: string | null;
@@ -528,9 +529,9 @@ async function buildPrompt(
     category: string | null;
     skills: string[] | null;
   }[],
-  templateId: string
+  templateId: string,
+  template: Awaited<ReturnType<typeof getTemplateById>>
 ) {
-  const template = (await getTemplateById(templateId)) || (await getTemplateById("cs"))!;
   const jobSummary = [
     jobDescription.role_title ? `Role: ${jobDescription.role_title}` : null,
     jobDescription.company ? `Company: ${jobDescription.company}` : null,

@@ -14,7 +14,7 @@ import type {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { getAllTemplates } from "@/lib/resume/templates";
+import type { ResumeTemplate } from "@/lib/resume/templates";
 import Link from "next/link";
 
 type AutoSummary = {
@@ -27,6 +27,7 @@ type AutoSummary = {
 type GenerateFormClientProps = {
   jobDescriptions: JobDescription[];
   summary: AutoSummary;
+  templates: ResumeTemplate[];
 };
 
 const initialState: GenerateState = { status: "success", message: "" };
@@ -50,13 +51,9 @@ function SubmitButton() {
 export function GenerateFormClient({
   jobDescriptions,
   summary,
+  templates,
 }: GenerateFormClientProps) {
   const [state, formAction] = useActionState(generateResume, initialState);
-  const [templates, setTemplates] = React.useState<Awaited<ReturnType<typeof getAllTemplates>>>([]);
-
-  React.useEffect(() => {
-    getAllTemplates().then(setTemplates);
-  }, []);
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1.2fr_1fr]">
