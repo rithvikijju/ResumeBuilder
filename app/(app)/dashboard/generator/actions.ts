@@ -669,10 +669,14 @@ ${list}`;
     `   - ${template.layout.showSummary ? "Include" : "Do NOT include"} a professional summary.`,
     `   - Format skills as: ${template.layout.skillsFormat}`,
     "",
+    "4. OUTPUT FORMAT:",
+    "   - You MUST return valid JSON only. Do not include any text before or after the JSON object.",
+    "   - The response must be valid JSON that matches the schema below.",
+    "",
     template.structure === "structured" 
-      ? "Create a tailored resume in STRUCTURED format (use the structured schema below)."
-      :     template.structure === "structured"
-      ? `Use this STRUCTURED format (match the exact structure):
+      ? `Create a tailored resume in STRUCTURED format and return it as valid JSON (use the structured JSON schema below):
+
+Use this STRUCTURED JSON format (match the exact structure):
 ${JSON.stringify(
   {
     header: {
@@ -730,8 +734,10 @@ ${JSON.stringify(
   },
   null,
   2
-)}`
-      : `Use this STANDARD format:
+    )}`
+      : `Create a tailored resume structure and return it as valid JSON following this JSON schema:
+
+Use this STANDARD JSON format:
 ${JSON.stringify(
       {
         summary: [
@@ -775,6 +781,8 @@ ${JSON.stringify(
       null,
       2
     )}`,
+    "",
+    "IMPORTANT: You must return valid JSON only. Do not include any text before or after the JSON object.",
     "",
     "CRITICAL REMINDERS:",
     "- Use bullet points VERBATIM from the achievements/highlights arrays. Copy them EXACTLY as written.",
