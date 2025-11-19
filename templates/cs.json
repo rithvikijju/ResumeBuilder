@@ -15,7 +15,221 @@
         "secondary": "#34495e",
         "accent": "#3498db",
         "text": "#2c3e50",
-        "background": "#FFFFFF"
+        "background":{
+            "id": "cs-structured",
+            "name": "Computer Science (Structured Format)",
+            "description": "Modern tech resume with structured header, education, experience, projects, and technical skills sections. Uses the exact format you provided.",
+            "category": "tech",
+            "is_default": false,
+            "template_config": {
+              "structure": "structured",
+              "style": {
+                "fontFamily": "Calibri, Arial, sans-serif",
+                "fontSize": "11pt",
+                "lineHeight": "1.3",
+                "spacing": "normal",
+                "colors": {
+                  "primary": "#2c3e50",
+                  "secondary": "#34495e",
+                  "accent": "#3498db",
+                  "text": "#2c3e50",
+                  "background": "#FFFFFF"
+                }
+              },
+              "layout": {
+                "headerStyle": "left-aligned",
+                "sectionOrder": ["education", "experience", "projects", "technical_skills"],
+                "showSummary": false,
+                "showSkills": true,
+                "skillsFormat": "categories"
+              },
+              "formatting": {
+                "emphasisStyle": "bold",
+                "dateFormat": "MMM YYYY",
+                "bulletStyle": "bullet"
+              },
+              "structureFormat": {
+                "header": {
+                  "showName": true,
+                  "showPhone": true,
+                  "showEmail": true,
+                  "showLinks": true,
+                  "linkFormat": "label-url"
+                },
+                "education": {
+                  "showLocation": true,
+                  "showDates": true,
+                  "dateFormat": "MMM YYYY"
+                },
+                "experience": {
+                  "showLocation": true,
+                  "showDates": true,
+                  "dateFormat": "MMM YYYY",
+                  "showBullets": true
+                },
+                "projects": {
+                  "showTechStack": true,
+                  "showDates": true,
+                  "dateFormat": "MMM YYYY",
+                  "showBullets": true
+                },
+                "technical_skills": {
+                  "format": "categories",
+                  "showCategories": true
+                }
+              }
+            },
+            "data": {
+              "header": {
+                "name": "Jake Ryan",
+                "phone": "123-456-7890",
+                "email": "jake@su.edu",
+                "links": [
+                  {
+                    "label": "LinkedIn",
+                    "url": "https://linkedin.com/in/jake"
+                  },
+                  {
+                    "label": "GitHub",
+                    "url": "https://github.com/jake"
+                  }
+                ]
+              },
+              "education": [
+                {
+                  "institution": "Southwestern University",
+                  "location": "Georgetown, TX",
+                  "degree": "Bachelor of Arts in Computer Science, Minor in Business",
+                  "start_date": "Aug. 2018",
+                  "end_date": "May 2021"
+                },
+                {
+                  "institution": "Blinn College",
+                  "location": "Bryan, TX",
+                  "degree": "Associate's in Liberal Arts",
+                  "start_date": "Aug. 2014",
+                  "end_date": "May 2018"
+                }
+              ],
+              "experience": [
+                {
+                  "title": "Undergraduate Research Assistant",
+                  "organization": "Texas A&M University",
+                  "location": "College Station, TX",
+                  "start_date": "June 2020",
+                  "end_date": "Present",
+                  "bullets": [
+                    "Developed a REST API using FastAPI and PostgreSQL to store data from learning management systems",
+                    "Developed a full-stack web application using Flask, React, PostgreSQL and Docker to analyze GitHub data",
+                    "Explored ways to visualize GitHub collaboration in a classroom setting"
+                  ]
+                },
+                {
+                  "title": "Information Technology Support Specialist",
+                  "organization": "Southwestern University",
+                  "location": "Georgetown, TX",
+                  "start_date": "Sep. 2018",
+                  "end_date": "Present",
+                  "bullets": [
+                    "Communicate with managers to set up campus computers used on campus",
+                    "Assess and troubleshoot computer problems brought by students, faculty and staff",
+                    "Maintain upkeep of computers, classroom equipment, and 200 printers across campus"
+                  ]
+                },
+                {
+                  "title": "Artificial Intelligence Research Assistant",
+                  "organization": "Southwestern University",
+                  "location": "Georgetown, TX",
+                  "start_date": "May 2019",
+                  "end_date": "July 2019",
+                  "bullets": [
+                    "Explored methods to generate video game dungeons based off of The Legend of Zelda",
+                    "Developed a game in Java to test the generated dungeons",
+                    "Contributed 50K+ lines of code to an established codebase via Git",
+                    "Conducted a human subject study to determine which video game dungeon generation technique is enjoyable",
+                    "Wrote an 8-page paper and gave multiple presentations on-campus",
+                    "Presented virtually to the World Conference on Computational Intelligence"
+                  ]
+                }
+              ],
+              "projects": [
+                {
+                  "name": "Gitlytics",
+                  "tech_stack": [
+                    "Python",
+                    "Flask",
+                    "React",
+                    "PostgreSQL",
+                    "Docker",
+                    "Celery",
+                    "Redis"
+                  ],
+                  "start_date": "June 2020",
+                  "end_date": "Present",
+                  "bullets": [
+                    "Developed a full-stack web application with Flask serving a REST API and React as the frontend",
+                    "Implemented GitHub OAuth to get data from users’ repositories",
+                    "Visualized GitHub data to show collaboration",
+                    "Used Celery and Redis for asynchronous tasks"
+                  ]
+                },
+                {
+                  "name": "Simple Paintball",
+                  "tech_stack": [
+                    "Spigot API",
+                    "Java",
+                    "Maven",
+                    "TravisCI",
+                    "Git"
+                  ],
+                  "start_date": "May 2018",
+                  "end_date": "May 2020",
+                  "bullets": [
+                    "Developed a Minecraft server plugin to entertain kids during free time for a previous job",
+                    "Published plugin to websites gaining 2K+ downloads and an average 4.5/5-star review",
+                    "Implemented continuous delivery using TravisCI to build the plugin upon a new release",
+                    "Collaborated with Minecraft server administrators to suggest features and get feedback about the plugin"
+                  ]
+                }
+              ],
+              "technical_skills": {
+                "Languages": [
+                  "Java",
+                  "Python",
+                  "C/C++",
+                  "SQL (Postgres)",
+                  "JavaScript",
+                  "HTML/CSS",
+                  "R"
+                ],
+                "Frameworks": [
+                  "React",
+                  "Node.js",
+                  "Flask",
+                  "JUnit",
+                  "WordPress",
+                  "Material-UI",
+                  "FastAPI"
+                ],
+                "Developer Tools": [
+                  "Git",
+                  "Docker",
+                  "TravisCI",
+                  "Google Cloud Platform",
+                  "VS Code",
+                  "Visual Studio",
+                  "PyCharm",
+                  "IntelliJ",
+                  "Eclipse"
+                ],
+                "Libraries": [
+                  "pandas",
+                  "NumPy",
+                  "Matplotlib"
+                ]
+              }
+            }
+          }
       }
     },
     "layout": {
