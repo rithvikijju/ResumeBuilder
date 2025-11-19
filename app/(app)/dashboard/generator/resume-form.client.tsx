@@ -90,27 +90,32 @@ export function GenerateFormClient({
               <label className="block text-sm font-semibold text-gray-900">
                 Resume Template
               </label>
-              <div className="grid gap-3 sm:grid-cols-3">
-                {templates.map((template) => (
-                  <label
-                    key={template.id}
-                    className="flex cursor-pointer flex-col gap-2 rounded-xl border-2 border-gray-200 bg-white p-4 transition-all duration-200 hover:border-blue-500 hover:shadow-md active:scale-[0.98]"
-                  >
-                    <input
-                      type="radio"
-                      name="templateId"
-                      value={template.id}
-                      defaultChecked={template.id === "cs"}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                      required
-                    />
-                    <div className="space-y-1">
-                      <p className="font-semibold text-gray-900">{template.name}</p>
-                      <p className="text-xs text-gray-600 leading-relaxed">
-                        {template.description}
-                      </p>
-                    </div>
-                  </label>
+              {templates.length === 0 ? (
+                <div className="rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 p-6 text-center">
+                  <p className="text-sm text-gray-600">Loading templates...</p>
+                </div>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {templates.map((template) => (
+                    <label
+                      key={template.id}
+                      className="flex cursor-pointer flex-col gap-2 rounded-xl border-2 border-gray-200 bg-white p-4 transition-all duration-200 hover:border-blue-500 hover:shadow-md active:scale-[0.98]"
+                    >
+                      <input
+                        type="radio"
+                        name="templateId"
+                        value={template.id}
+                        defaultChecked={template.id === "cs"}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                        required
+                      />
+                      <div className="space-y-1">
+                        <p className="font-semibold text-gray-900">{template.name}</p>
+                        <p className="text-xs text-gray-600 leading-relaxed">
+                          {template.description}
+                        </p>
+                      </div>
+                    </label>
                   ))}
                 </div>
               )}
