@@ -352,7 +352,7 @@ export async function generateResume(
   }
 
   const templateId = parsed.data.templateId;
-  const prompt = buildPrompt(
+  const prompt = await buildPrompt(
     jobDescription,
     projects,
     experiences,
@@ -490,7 +490,7 @@ export async function generateResume(
   };
 }
 
-function buildPrompt(
+async function buildPrompt(
   jobDescription: {
     role_title: string | null;
     company: string | null;
