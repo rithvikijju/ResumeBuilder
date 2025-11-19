@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ResumeSchema } from "@/lib/resume/schema";
+import { getTemplateById } from "@/lib/resume/templates";
 import jsPDF from "jspdf";
 
 export async function GET(
@@ -33,95 +34,168 @@ export async function GET(
   }
 
   const resume = validation.data;
+  const templateId = (data as any).template_id || "cs";
+  const template = (await getTemplateById(templateId)) || (await getTemplateById("cs"))!;
 
-  // Create PDF
-  const doc = new jsPDF();
-  let yPos = 20;
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const margin = 20;
+  // Create PDF with template settings
+  const doc = new jsPDF({
+    unit: "in",
+    format: "letter",
+  });
+  
+  let yPos = 0.5; // Start at 0.5 inches from top
+  const pageWidth = 8.5;
+  const pageHeight = 11;
+  const margin = 0.5;
   const contentWidth = pageWidth - 2 * margin;
-  const lineHeight = 7;
-  const sectionSpacing = 10;
+  const maxY = pageHeight - margin; // One page limit
+  
+  // Set template font (approximate mapping)
+  const fontMap: Record<string, string> = {
+    "Times New Roman, serif": "times",
+    "Arial, sans-serif": "helvetica",
+    "Calibri, Arial, sans-serif": "helvetica",
+  };
+  const pdfFont = fontMap[template.style.fontFamily] || "helvetica";
+  
+  // Parse font size (remove 'pt')
+  const fontSize = parseFloat(template.style.fontSize.replace("pt", "")) || 11;
+  const lineHeight = parseFloat(template.style.lineHeight) * (fontSize / 72); // Convert to inches
 
   // Helper to add text with word wrap
-  const addText = (text: string, fontSize: number, isBold = false, x = margin) => {
-    doc.setFontSize(fontSize);
-    doc.setFont("helvetica", isBold ? "bold" : "normal");
+  const addText = (text: string, size: number, isBold = false, x = margin, color?: string) => {
+    if (yPos > maxY) return 0; // One page limit
+    
+    doc.setFontSize(size);
+    doc.setFont(pdfFont, isBold ? "bold" : "normal");
+    if (color) {
+      const rgb = hexToRgb(color);
+      if (rgb) doc.setTextColor(rgb.r, rgb.g, rgb.b);
+    }
     const lines = doc.splitTextToSize(text, contentWidth);
+    const spaceNeeded = lines.length * lineHeight;
+    
+    if (yPos + spaceNeeded > maxY) {
+      // Truncate if it would exceed page
+      const linesThatFit = Math.floor((maxY - yPos) / lineHeight);
+      if (linesThatFit > 0) {
+        doc.text(lines.slice(0, linesThatFit), x, yPos);
+        yPos = maxY;
+        return linesThatFit;
+      }
+      return 0;
+    }
+    
     doc.text(lines, x, yPos);
-    yPos += lines.length * lineHeight;
+    yPos += spaceNeeded;
     return lines.length;
   };
 
-  // Helper to check if we need a new page
-  const checkNewPage = () => {
-    if (yPos > doc.internal.pageSize.getHeight() - 30) {
-      doc.addPage();
-      yPos = 20;
-    }
+  // Helper to convert hex to RGB
+  const hexToRgb = (hex: string) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result
+      ? {
+          r: parseInt(result[1], 16),
+          g: parseInt(result[2], 16),
+          b: parseInt(result[3], 16),
+        }
+      : null;
   };
 
-  // Title
-  addText(data.title || "Resume", 18, true);
-  yPos += 5;
-
-  // Summary
-  if (resume.summary && resume.summary.length > 0) {
-    checkNewPage();
-    addText("PROFESSIONAL SUMMARY", 12, true);
-    yPos += 3;
-    resume.summary.forEach((item) => {
-      checkNewPage();
-      addText(`• ${item.sentence}`, 10);
-      yPos += 2;
-    });
-    yPos += sectionSpacing;
+  // Title (if header is centered)
+  if (template.layout.headerStyle === "centered") {
+    doc.setFontSize(fontSize + 4);
+    doc.setFont(pdfFont, "bold");
+    const titleText = data.title || "Resume";
+    const titleWidth = doc.getTextWidth(titleText);
+    doc.text(titleText, (pageWidth - titleWidth) / 2, yPos);
+    yPos += lineHeight * 1.5;
+  } else {
+    addText(data.title || "Resume", fontSize + 2, true, margin, template.style.colors.primary);
+    yPos += lineHeight * 0.5;
   }
 
-  // Sections
-  resume.sections.forEach((section) => {
-    checkNewPage();
-    addText(section.title.toUpperCase(), 12, true);
-    yPos += 5;
+  // Summary (if template shows it)
+  if (template.layout.showSummary && resume.summary && resume.summary.length > 0) {
+    const sectionTitle = template.category === "finance" ? "PROFESSIONAL SUMMARY" : "Professional Summary";
+    addText(sectionTitle, fontSize + 1, true, margin, template.style.colors.primary);
+    yPos += lineHeight * 0.3;
+    
+    resume.summary.slice(0, 3).forEach((item) => { // Limit to 3 for one page
+      const bullet = template.formatting.bulletStyle === "bullet" ? "•" : template.formatting.bulletStyle === "dash" ? "—" : "";
+      addText(`${bullet} ${item.sentence}`, fontSize, false, margin + (bullet ? 0.1 : 0));
+      yPos += lineHeight * 0.2;
+    });
+    yPos += lineHeight * 0.5;
+  }
+
+  // Sections in template order
+  const sectionsToShow = template.layout.sectionOrder
+    .map((title) => resume.sections.find((s) => s.title === title))
+    .filter(Boolean) as typeof resume.sections;
+
+  // Add any sections not in template order
+  const remainingSections = resume.sections.filter(
+    (s) => !template.layout.sectionOrder.includes(s.title)
+  );
+  sectionsToShow.push(...remainingSections);
+
+  sectionsToShow.forEach((section) => {
+    if (yPos > maxY - lineHeight * 2) return; // Skip if no space
+    
+    const sectionTitle = template.category === "finance" ? section.title.toUpperCase() : section.title;
+    addText(sectionTitle, fontSize + 1, true, margin, template.style.colors.primary);
+    yPos += lineHeight * 0.3;
 
     section.items.forEach((item) => {
-      checkNewPage();
+      if (yPos > maxY - lineHeight) return; // Skip if no space
+      
       if (item.heading) {
-        addText(item.heading, 11, true);
-        yPos += 2;
+        addText(item.heading, fontSize, true, margin);
+        yPos += lineHeight * 0.2;
       }
-      addText(item.content, 10);
-      yPos += 2;
+      
+      const bullet = template.formatting.bulletStyle === "bullet" ? "•" : template.formatting.bulletStyle === "dash" ? "—" : "";
+      addText(`${bullet} ${item.content}`, fontSize, false, margin + (bullet ? 0.1 : 0));
+      yPos += lineHeight * 0.2;
 
       if (item.metrics && item.metrics.length > 0) {
         const metricsText = item.metrics
           .map((m) => `${m.value} ${m.label}`)
           .join(" • ");
-        addText(metricsText, 9);
-        yPos += 2;
+        addText(metricsText, fontSize - 1, false, margin + 0.2);
+        yPos += lineHeight * 0.2;
       }
-      yPos += 3;
+      yPos += lineHeight * 0.1;
     });
-    yPos += sectionSpacing;
+    yPos += lineHeight * 0.3;
   });
 
-  // Skills
-  if (resume.skills) {
-    checkNewPage();
-    addText("SKILLS", 12, true);
-    yPos += 5;
+  // Skills (if template shows it)
+  if (template.layout.showSkills && resume.skills && yPos < maxY - lineHeight * 2) {
+    addText("SKILLS", fontSize + 1, true, margin, template.style.colors.primary);
+    yPos += lineHeight * 0.3;
 
-    if (resume.skills.primary && resume.skills.primary.length > 0) {
-      addText(`Primary: ${resume.skills.primary.join(", ")}`, 10);
-      yPos += 3;
-    }
-    if (resume.skills.secondary && resume.skills.secondary.length > 0) {
-      addText(`Secondary: ${resume.skills.secondary.join(", ")}`, 10);
-      yPos += 3;
-    }
-    if (resume.skills.tools && resume.skills.tools.length > 0) {
-      addText(`Tools: ${resume.skills.tools.join(", ")}`, 10);
-      yPos += 3;
+    if (template.layout.skillsFormat === "inline") {
+      const allSkills = [
+        ...(resume.skills.primary || []),
+        ...(resume.skills.secondary || []),
+        ...(resume.skills.tools || []),
+      ];
+      addText(allSkills.join(" • "), fontSize, false, margin);
+    } else {
+      if (resume.skills.primary && resume.skills.primary.length > 0) {
+        addText(`Primary: ${resume.skills.primary.join(", ")}`, fontSize, false, margin);
+        yPos += lineHeight * 0.2;
+      }
+      if (resume.skills.secondary && resume.skills.secondary.length > 0) {
+        addText(`Secondary: ${resume.skills.secondary.join(", ")}`, fontSize, false, margin);
+        yPos += lineHeight * 0.2;
+      }
+      if (resume.skills.tools && resume.skills.tools.length > 0) {
+        addText(`Tools: ${resume.skills.tools.join(", ")}`, fontSize, false, margin);
+      }
     }
   }
 

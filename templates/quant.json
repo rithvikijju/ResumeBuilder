@@ -1,0 +1,35 @@
+{
+  "id": "quant",
+  "name": "Quantitative Finance",
+  "description": "Technical format emphasizing skills, projects, and quantitative achievements. Perfect for quant roles.",
+  "category": "finance",
+  "is_default": true,
+  "template_config": {
+    "style": {
+      "fontFamily": "Arial, sans-serif",
+      "fontSize": "10pt",
+      "lineHeight": "1.2",
+      "spacing": "normal",
+      "colors": {
+        "primary": "#1a1a1a",
+        "secondary": "#4a4a4a",
+        "accent": "#0066cc",
+        "text": "#1a1a1a",
+        "background": "#FFFFFF"
+      }
+    },
+    "layout": {
+      "headerStyle": "left-aligned",
+      "sectionOrder": ["Education", "Technical Skills", "Experience", "Projects", "Publications"],
+      "showSummary": true,
+      "showSkills": true,
+      "skillsFormat": "categories"
+    },
+    "formatting": {
+      "emphasisStyle": "bold",
+      "dateFormat": "MMM YYYY",
+      "bulletStyle": "bullet"
+    }
+  }
+}
+

@@ -1,15 +1,17 @@
 "use client";
 
-import { getTemplateById, type ResumeTemplate } from "@/lib/resume/templates";
+import { type ResumeTemplate } from "@/lib/resume/templates";
 import type { ResumePayload } from "@/lib/resume/schema";
 
 type TemplateRendererProps = {
   resume: ResumePayload;
-  templateId: string;
+  template: ResumeTemplate | null;
 };
 
-export function TemplateRenderer({ resume, templateId }: TemplateRendererProps) {
-  const template = getTemplateById(templateId) || getTemplateById("cs")!;
+export function TemplateRenderer({ resume, template }: TemplateRendererProps) {
+  if (!template) {
+    return <div>Template not found</div>;
+  }
 
   return (
     <div

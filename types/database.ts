@@ -184,6 +184,38 @@ export type Database = {
           created_at?: string | null;
         };
       };
+      resume_templates: {
+        Row: {
+          id: string;
+          name: string;
+          description: string | null;
+          category: "finance" | "tech" | "custom";
+          is_default: boolean | null;
+          template_config: Json;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          id: string;
+          name: string;
+          description?: string | null;
+          category: "finance" | "tech" | "custom";
+          is_default?: boolean | null;
+          template_config: Json;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string | null;
+          category?: "finance" | "tech" | "custom";
+          is_default?: boolean | null;
+          template_config?: Json;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+      };
       resume_sources: {
         Row: {
           id: string;
@@ -404,4 +436,5 @@ export type JobDescription = Database["public"]["Tables"]["job_descriptions"]["R
 export type ExperienceRecord = Database["public"]["Tables"]["experience_records"]["Row"];
 export type EducationRecord = Database["public"]["Tables"]["education_records"]["Row"];
 export type SkillRecord = Database["public"]["Tables"]["skill_records"]["Row"];
+export type ResumeTemplateRecord = Database["public"]["Tables"]["resume_templates"]["Row"];
 

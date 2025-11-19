@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import * as React from "react";
 import { useFormStatus } from "react-dom";
 import { generateResume, type GenerateState } from "./actions";
 import type {
@@ -51,7 +52,11 @@ export function GenerateFormClient({
   summary,
 }: GenerateFormClientProps) {
   const [state, formAction] = useActionState(generateResume, initialState);
-  const templates = getAllTemplates();
+  const [templates, setTemplates] = React.useState<Awaited<ReturnType<typeof getAllTemplates>>>([]);
+
+  React.useEffect(() => {
+    getAllTemplates().then(setTemplates);
+  }, []);
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1.2fr_1fr]">
@@ -106,8 +111,9 @@ export function GenerateFormClient({
                       </p>
                     </div>
                   </label>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
               <p className="text-xs text-gray-500">
                 Choose a template that matches your target role. The resume will be formatted accordingly.
               </p>

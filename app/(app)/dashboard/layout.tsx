@@ -13,6 +13,7 @@ const navItems = [
   { href: "/dashboard/generator", label: "Generate" },
   { href: "/dashboard/resumes", label: "Resumes" },
   { href: "/dashboard/cover-letter", label: "Cover letter" },
+  { href: "/dashboard/templates", label: "Templates" },
 ];
 
 type DashboardLayoutProps = {

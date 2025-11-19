@@ -45,7 +45,7 @@ export default async function ResumeDetailPage({ params }: ResumeDetailProps) {
 
   const resume = validation.data;
   const templateId = (data as any).template_id || "cs";
-  const template = getTemplateById(templateId);
+  const template = await getTemplateById(templateId);
 
   return (
     <div className="space-y-8">
@@ -87,12 +87,106 @@ export default async function ResumeDetailPage({ params }: ResumeDetailProps) {
           >
             Export PDF
           </a>
+          <a
+            href={`/dashboard/resumes/${id}/export-latex`}
+            download
+            className="inline-flex items-center rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-medium text-blue-700 transition-all duration-200 hover:bg-blue-50"
+          >
+            Export LaTeX
+          </a>
         </div>
       </header>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
-        <TemplateRenderer resume={resume} templateId={templateId} />
-      </div>
+      {template && (
+        <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
+          <TemplateRenderer resume={resume} template={template} />
+        </div>
+      )}
+
+      {/* Insights Section */}
+      {resume.insights && (
+        <div className="space-y-4 rounded-xl border border-blue-200 bg-blue-50/30 p-6">
+          <h2 className="text-lg font-semibold text-blue-900">Resume Insights</h2>
+          
+          {resume.insights.strengths && resume.insights.strengths.length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-blue-800 mb-2">Strengths</h3>
+              <ul className="space-y-1 text-sm text-slate-700">
+                {resume.insights.strengths.map((strength, index) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <span className="text-green-600 mt-0.5">✓</span>
+                    <span>{strength}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {resume.insights.suggestions && resume.insights.suggestions.length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-blue-800 mb-2">Suggestions to Improve Fit</h3>
+              <ul className="space-y-1 text-sm text-slate-700">
+                {resume.insights.suggestions.map((suggestion, index) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <span className="text-blue-600 mt-0.5">•</span>
+                    <span>{suggestion}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {resume.insights.missingKeywords && resume.insights.missingKeywords.length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-blue-800 mb-2">Missing Keywords</h3>
+              <div className="flex flex-wrap gap-2">
+                {resume.insights.missingKeywords.map((keyword, index) => (
+                  <span
+                    key={index}
+                    className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800"
+                  >
+                    {keyword}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Template Analytics Section */}
+      {resume.templateAnalytics && (
+        <div className="space-y-4 rounded-xl border border-purple-200 bg-purple-50/30 p-6">
+          <h2 className="text-lg font-semibold text-purple-900">Template Analysis</h2>
+          
+          {resume.templateAnalytics.whyThisTemplate && (
+            <div>
+              <h3 className="text-sm font-semibold text-purple-800 mb-2">Why This Template</h3>
+              <p className="text-sm text-slate-700 leading-relaxed">
+                {resume.templateAnalytics.whyThisTemplate}
+              </p>
+            </div>
+          )}
+
+          {resume.templateAnalytics.atsCompatibility && (
+            <div>
+              <h3 className="text-sm font-semibold text-purple-800 mb-2">ATS Compatibility</h3>
+              <p className="text-sm text-slate-700 leading-relaxed">
+                {resume.templateAnalytics.atsCompatibility}
+              </p>
+            </div>
+          )}
+
+          {resume.templateAnalytics.industryStandards && (
+            <div>
+              <h3 className="text-sm font-semibold text-purple-800 mb-2">Industry Standards</h3>
+              <p className="text-sm text-slate-700 leading-relaxed">
+                {resume.templateAnalytics.industryStandards}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       <details className="rounded-xl border border-blue-200 bg-blue-50/30 p-5 text-sm text-slate-600">
         <summary className="cursor-pointer font-medium text-blue-900">

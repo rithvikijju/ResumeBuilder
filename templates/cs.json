@@ -1,0 +1,35 @@
+{
+  "id": "cs",
+  "name": "Computer Science",
+  "description": "Modern tech resume format. Highlights projects, technical skills, and impact metrics. Great for software engineering roles.",
+  "category": "tech",
+  "is_default": true,
+  "template_config": {
+    "style": {
+      "fontFamily": "Calibri, Arial, sans-serif",
+      "fontSize": "11pt",
+      "lineHeight": "1.3",
+      "spacing": "normal",
+      "colors": {
+        "primary": "#2c3e50",
+        "secondary": "#34495e",
+        "accent": "#3498db",
+        "text": "#2c3e50",
+        "background": "#FFFFFF"
+      }
+    },
+    "layout": {
+      "headerStyle": "left-aligned",
+      "sectionOrder": ["Experience", "Projects", "Education", "Technical Skills"],
+      "showSummary": false,
+      "showSkills": true,
+      "skillsFormat": "inline"
+    },
+    "formatting": {
+      "emphasisStyle": "bold",
+      "dateFormat": "MMM YYYY",
+      "bulletStyle": "bullet"
+    }
+  }
+}
+

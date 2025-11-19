@@ -5,6 +5,7 @@ import { z } from "zod";
 import { getOpenAIClient } from "@/lib/openai/client";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ResumeSchema } from "@/lib/resume/schema";
+import { getTemplateById } from "@/lib/resume/templates";
 import type { JobDescription } from "@/types/database";
 
 const generateSchema = z.object({
@@ -350,12 +351,14 @@ export async function generateResume(
     };
   }
 
+  const templateId = parsed.data.templateId;
   const prompt = buildPrompt(
     jobDescription,
     projects,
     experiences,
     education,
-    skills
+    skills,
+    templateId
   );
   const openai = getOpenAIClient();
 
@@ -524,8 +527,10 @@ function buildPrompt(
   skills: {
     category: string | null;
     skills: string[] | null;
-  }[]
+  }[],
+  templateId: string
 ) {
+  const template = (await getTemplateById(templateId)) || (await getTemplateById("cs"))!;
   const jobSummary = [
     jobDescription.role_title ? `Role: ${jobDescription.role_title}` : null,
     jobDescription.company ? `Company: ${jobDescription.company}` : null,
@@ -549,7 +554,7 @@ function buildPrompt(
       ? projects
           .map((project, index) => {
             const highlights = project.highlights?.length
-              ? project.highlights.map((item) => `- ${item}`).join("\n")
+              ? project.highlights.map((item, idx) => `  Bullet ${idx + 1}: ${item}`).join("\n")
               : "No highlights provided.";
 
             const tags = project.tags?.length
@@ -560,7 +565,7 @@ function buildPrompt(
 Title: ${project.title}
 Summary: ${project.summary ?? "N/A"}
 ${tags}
-Highlights:
+Highlights (use each bullet EXACTLY as written, one per resume item):
 ${highlights}`;
           })
           .join("\n\n")
@@ -571,7 +576,7 @@ ${highlights}`;
       ? experiences
           .map((experience, index) => {
             const achievements = experience.achievements?.length
-              ? experience.achievements.map((item) => `- ${item}`).join("\n")
+              ? experience.achievements.map((item, idx) => `  Bullet ${idx + 1}: ${item}`).join("\n")
               : "No bullet achievements provided.";
 
             return `Experience ${index + 1}:
@@ -582,7 +587,7 @@ Dates: ${experience.start_date ?? "?"} – ${
               experience.is_current ? "Present" : experience.end_date ?? "?"
             }
 Summary: ${experience.summary ?? "N/A"}
-Achievements:
+Achievements (use each bullet EXACTLY as written, one per resume item):
 ${achievements}`;
           })
           .join("\n\n")
@@ -593,7 +598,7 @@ ${achievements}`;
       ? education
           .map((item, index) => {
             const highlights = item.achievements?.length
-              ? item.achievements.map((ach) => `- ${ach}`).join("\n")
+              ? item.achievements.map((ach, idx) => `  Bullet ${idx + 1}: ${ach}`).join("\n")
               : "No highlights provided.";
 
             return `Education ${index + 1}:
@@ -601,7 +606,7 @@ Institution: ${item.institution ?? "N/A"}
 Degree: ${item.degree ?? "N/A"}
 Field of study: ${item.field_of_study ?? "N/A"}
 Dates: ${item.start_date ?? "?"} – ${item.end_date ?? "?"}
-Highlights:
+Highlights (use each bullet EXACTLY as written, one per resume item):
 ${highlights}`;
           })
           .join("\n\n")
@@ -644,8 +649,89 @@ ${list}`;
     "Skill groups:",
     skillDetails,
     "",
-    "Create a tailored resume structure in JSON following this schema:",
-    JSON.stringify(
+    "CRITICAL INSTRUCTIONS:",
+    "",
+    "1. USE BULLET POINTS VERBATIM:",
+    "   - For experiences: Use the exact bullet points from the 'achievements' array. Do NOT summarize, reword, or combine them.",
+    "   - For projects: Use the exact bullet points from the 'highlights' array. Do NOT summarize, reword, or combine them.",
+    "   - For education: Use the exact bullet points from the 'achievements' array if provided.",
+    "   - You may only reorder bullets for better flow, but the text must remain EXACTLY as provided.",
+    "",
+    "2. ONE-PAGE LIMIT:",
+    "   - The resume MUST fit on a single page (8.5\" x 11\").",
+    "   - Prioritize the most relevant content. If needed, select only the top 3-4 most relevant bullets per experience/project.",
+    "   - Keep summary to 2-3 sentences maximum.",
+    "   - Limit sections to essential content only.",
+    "",
+    `3. TEMPLATE: ${template.name} (${template.category})`,
+    `   - Follow the template's section order: ${template.layout.sectionOrder.join(", ")}`,
+    `   - ${template.layout.showSummary ? "Include" : "Do NOT include"} a professional summary.`,
+    `   - Format skills as: ${template.layout.skillsFormat}`,
+    "",
+    template.structure === "structured" 
+      ? "Create a tailored resume in STRUCTURED format (use the structured schema below)."
+      :     template.structure === "structured"
+      ? `Use this STRUCTURED format (match the exact structure):
+${JSON.stringify(
+  {
+    header: {
+      name: "string (from user profile)",
+      phone: "string (from user profile)",
+      email: "string (from user profile)",
+      links: [
+        { label: "LinkedIn", url: "string" },
+        { label: "GitHub", url: "string" }
+      ]
+    },
+    education: [
+      {
+        institution: "string",
+        location: "string",
+        degree: "string",
+        start_date: "MMM YYYY",
+        end_date: "MMM YYYY"
+      }
+    ],
+    experience: [
+      {
+        title: "string (role_title)",
+        organization: "string (organization)",
+        location: "string",
+        start_date: "MMM YYYY",
+        end_date: "MMM YYYY or 'Present'",
+        bullets: ["string (EXACT from achievements array, one per bullet)"]
+      }
+    ],
+    projects: [
+      {
+        name: "string (title)",
+        tech_stack: ["string"],
+        start_date: "MMM YYYY",
+        end_date: "MMM YYYY or 'Present'",
+        bullets: ["string (EXACT from highlights array, one per bullet)"]
+      }
+    ],
+    technical_skills: {
+      "Languages": ["string"],
+      "Frameworks": ["string"],
+      "Tools": ["string"]
+    },
+    insights: {
+      suggestions: ["string"],
+      missingKeywords: ["string"],
+      strengths: ["string"]
+    },
+    templateAnalytics: {
+      whyThisTemplate: "string",
+      atsCompatibility: "string",
+      industryStandards: "string"
+    }
+  },
+  null,
+  2
+)}`
+      : `Use this STANDARD format:
+${JSON.stringify(
       {
         summary: [
           {
@@ -654,11 +740,11 @@ ${list}`;
         ],
         sections: [
           {
-            title: "string",
+            title: "string (e.g., 'Experience', 'Projects')",
             items: [
               {
-                heading: "string",
-                content: "string",
+                heading: "string (e.g., 'Software Engineer | Google | Jan 2020 - Present')",
+                content: "string (EXACT bullet point text from achievements/highlights array - ONE bullet per item, do NOT combine multiple bullets)",
                 metrics: [
                   {
                     label: "string",
@@ -674,12 +760,28 @@ ${list}`;
           secondary: ["string"],
           tools: ["string"],
         },
+        insights: {
+          suggestions: ["string - what to add to improve fit"],
+          missingKeywords: ["string - keywords from job not in resume"],
+          strengths: ["string - what makes this resume strong"],
+        },
+        templateAnalytics: {
+          whyThisTemplate: "string - why this template is best for this role",
+          atsCompatibility: "string - ATS optimization notes",
+          industryStandards: "string - how this matches industry expectations",
+        },
       },
       null,
       2
-    ),
+    )}`,
     "",
-    "Focus on measurable impact, align wording with the job, and keep each bullet under 30 words.",
+    "CRITICAL REMINDERS:",
+    "- Use bullet points VERBATIM from the achievements/highlights arrays. Copy them EXACTLY as written.",
+    "- Each bullet point should be a SEPARATE item in the items array. Do NOT combine multiple bullets into one item.",
+    "- You may reorder bullets for better relevance, but the text must remain unchanged.",
+    "- The resume MUST fit on one page. Select only the most relevant bullets if needed.",
+    "- For each experience/project, create one item per bullet point with the heading showing role/company/dates.",
+    "- Example: If an experience has 3 bullets, create 3 separate items, each with the same heading but different content.",
   ].join("\n");
 }
 

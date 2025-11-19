@@ -1,0 +1,35 @@
+{
+  "id": "ib",
+  "name": "Investment Banking",
+  "description": "Traditional, conservative format preferred by finance firms. Clean, professional, and ATS-friendly.",
+  "category": "finance",
+  "is_default": true,
+  "template_config": {
+    "style": {
+      "fontFamily": "Times New Roman, serif",
+      "fontSize": "11pt",
+      "lineHeight": "1.15",
+      "spacing": "tight",
+      "colors": {
+        "primary": "#000000",
+        "secondary": "#333333",
+        "accent": "#000000",
+        "text": "#000000",
+        "background": "#FFFFFF"
+      }
+    },
+    "layout": {
+      "headerStyle": "centered",
+      "sectionOrder": ["Education", "Experience", "Leadership", "Skills", "Additional"],
+      "showSummary": true,
+      "showSkills": true,
+      "skillsFormat": "categories"
+    },
+    "formatting": {
+      "emphasisStyle": "bold",
+      "dateFormat": "MM/YYYY",
+      "bulletStyle": "bullet"
+    }
+  }
+}
+

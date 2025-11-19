@@ -28,6 +28,37 @@ export type ResumeTemplate = {
     dateFormat: string;
     bulletStyle: "bullet" | "dash" | "none";
   };
+  structure?: "standard" | "structured"; // New: indicates which format to use
+  structureFormat?: {
+    header?: {
+      showName?: boolean;
+      showPhone?: boolean;
+      showEmail?: boolean;
+      showLinks?: boolean;
+      linkFormat?: string;
+    };
+    education?: {
+      showLocation?: boolean;
+      showDates?: boolean;
+      dateFormat?: string;
+    };
+    experience?: {
+      showLocation?: boolean;
+      showDates?: boolean;
+      dateFormat?: string;
+      showBullets?: boolean;
+    };
+    projects?: {
+      showTechStack?: boolean;
+      showDates?: boolean;
+      dateFormat?: string;
+      showBullets?: boolean;
+    };
+    technical_skills?: {
+      format?: "categories" | "list";
+      showCategories?: boolean;
+    };
+  };
 };
 
 export const DEFAULT_TEMPLATES: ResumeTemplate[] = [
@@ -126,11 +157,60 @@ export const DEFAULT_TEMPLATES: ResumeTemplate[] = [
   },
 ];
 
-export function getTemplateById(id: string): ResumeTemplate | undefined {
+export async function getTemplateById(id: string): Promise<ResumeTemplate | undefined> {
+  // Try to fetch from database first
+  try {
+    const { createSupabaseServerClient } = await import("@/lib/supabase/server");
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("resume_templates")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (!error && data) {
+      return {
+        id: data.id,
+        name: data.name,
+        description: data.description || "",
+        category: data.category,
+        ...(data.template_config as Omit<ResumeTemplate, "id" | "name" | "description" | "category">),
+      };
+    }
+  } catch (error) {
+    console.warn("Failed to fetch template from database, using default:", error);
+  }
+
+  // Fall back to default templates
   return DEFAULT_TEMPLATES.find((t) => t.id === id);
 }
 
-export function getAllTemplates(): ResumeTemplate[] {
+export async function getAllTemplates(): Promise<ResumeTemplate[]> {
+  // Try to fetch from database first
+  try {
+    const { createSupabaseServerClient } = await import("@/lib/supabase/server");
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("resume_templates")
+      .select("*")
+      .order("is_default", { ascending: false })
+      .order("category")
+      .order("name");
+
+    if (!error && data && data.length > 0) {
+      return data.map((template) => ({
+        id: template.id,
+        name: template.name,
+        description: template.description || "",
+        category: template.category,
+        ...(template.template_config as Omit<ResumeTemplate, "id" | "name" | "description" | "category">),
+      }));
+    }
+  } catch (error) {
+    console.warn("Failed to fetch templates from database, using defaults:", error);
+  }
+
+  // Fall back to default templates
   return DEFAULT_TEMPLATES;
 }
 
