@@ -13,6 +13,7 @@ import type {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { getAllTemplates } from "@/lib/resume/templates";
 import Link from "next/link";
 
 type AutoSummary = {
@@ -50,6 +51,7 @@ export function GenerateFormClient({
   summary,
 }: GenerateFormClientProps) {
   const [state, formAction] = useActionState(generateResume, initialState);
+  const templates = getAllTemplates();
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1.2fr_1fr]">
@@ -76,6 +78,38 @@ export function GenerateFormClient({
               />
               <p className="text-xs text-gray-500">
                 Optional label to help you identify this draft later.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <label className="block text-sm font-semibold text-gray-900">
+                Resume Template
+              </label>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {templates.map((template) => (
+                  <label
+                    key={template.id}
+                    className="flex cursor-pointer flex-col gap-2 rounded-xl border-2 border-gray-200 bg-white p-4 transition-all duration-200 hover:border-blue-500 hover:shadow-md active:scale-[0.98]"
+                  >
+                    <input
+                      type="radio"
+                      name="templateId"
+                      value={template.id}
+                      defaultChecked={template.id === "cs"}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                      required
+                    />
+                    <div className="space-y-1">
+                      <p className="font-semibold text-gray-900">{template.name}</p>
+                      <p className="text-xs text-gray-600 leading-relaxed">
+                        {template.description}
+                      </p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500">
+                Choose a template that matches your target role. The resume will be formatted accordingly.
               </p>
             </div>
 

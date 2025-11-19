@@ -16,6 +16,7 @@ const generateSchema = z.object({
     .max(120, "Resume title should be under 120 characters.")
     .optional()
     .or(z.literal("")),
+  templateId: z.string().min(1, "Select a template.").default("cs"),
 });
 
 export type GenerateState =
@@ -212,6 +213,7 @@ export async function generateResume(
   const parsed = generateSchema.safeParse({
     jobDescriptionId: formData.get("jobDescriptionId"),
     title: formData.get("title"),
+    templateId: formData.get("templateId") || "cs",
   });
 
   if (!parsed.success) {
@@ -220,7 +222,7 @@ export async function generateResume(
     return { status: "error", message };
   }
 
-  const { jobDescriptionId, title } = parsed.data;
+  const { jobDescriptionId, title, templateId } = parsed.data;
 
   const jobDescriptionPromise = supabase
     .from("job_descriptions")
@@ -439,6 +441,7 @@ export async function generateResume(
           : `${(jobDescription as JobDescription).role_title ?? "Tailored"} Resume`,
       status: "generated",
       format: "pdf",
+      template_id: templateId,
       structured_content: structuredResume,
       ai_prompt: {
         jobDescriptionId,

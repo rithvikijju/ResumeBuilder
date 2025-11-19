@@ -117,6 +117,7 @@ export type Database = {
           title: string;
           status: string | null;
           format: "pdf" | "latex";
+          template_id: string | null;
           structured_content: Json;
           ai_prompt: Json | null;
           ai_response: Json | null;
@@ -133,6 +134,7 @@ export type Database = {
           title: string;
           status?: string | null;
           format?: "pdf" | "latex";
+          template_id?: string | null;
           structured_content: Json;
           ai_prompt?: Json | null;
           ai_response?: Json | null;
@@ -149,6 +151,7 @@ export type Database = {
           title?: string;
           status?: string | null;
           format?: "pdf" | "latex";
+          template_id?: string | null;
           structured_content?: Json;
           ai_prompt?: Json | null;
           ai_response?: Json | null;
