@@ -3,8 +3,8 @@ import { signOut } from "@/app/actions/sign-out";
 import Link from "next/link";
 
 export default async function Home() {
-  const session = await getSession();
-  const isAuthenticated = Boolean(session?.user);
+  const user = await getSession();
+  const isAuthenticated = Boolean(user);
 
   return (
     <main className="mx-auto flex max-w-4xl flex-col gap-12 px-6 py-24 lg:px-8">

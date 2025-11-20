@@ -42,7 +42,7 @@ export async function middleware(request: NextRequest) {
     headers: () => request.headers,
   });
 
-  await supabase.auth.getSession();
+  await supabase.auth.getUser();
 
   return response;
 }

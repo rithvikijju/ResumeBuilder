@@ -66,15 +66,15 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/sign-in?error=callback&message=${encodeURIComponent(errorMessage)}`);
   }
 
-  // Verify session was actually created and cookies are set
-  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  // Verify user was actually authenticated
+  const { data: userData, error: userError } = await supabase.auth.getUser();
   
-  if (sessionError || !sessionData?.session) {
-    console.error("Session not established after code exchange:", sessionError);
+  if (userError || !userData?.user) {
+    console.error("User not authenticated after code exchange:", userError);
     return NextResponse.redirect(`${origin}/sign-in?error=session_failed`);
   }
 
-  console.log("Auth callback successful, session established for user:", sessionData.session.user.email);
+  console.log("Auth callback successful, user authenticated:", userData.user.email);
 
   return response;
 }

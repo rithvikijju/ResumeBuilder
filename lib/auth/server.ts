@@ -5,22 +5,24 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function getSession() {
   const supabase = await createSupabaseServerClient();
-  const sessionResult = await supabase.auth.getSession();
+  const { data, error } = await supabase.auth.getUser();
 
-  if (sessionResult.error) {
-    console.error("Error fetching Supabase session:", sessionResult.error);
+  if (error) {
+    console.error("Error fetching Supabase user:", error);
+    return null;
   }
 
-  return sessionResult.data.session;
+  return data.user;
 }
 
 export async function requireUser() {
-  const session = await getSession();
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.auth.getUser();
 
-  if (!session?.user) {
+  if (error || !data.user) {
     redirect("/sign-in");
   }
 
-  return session.user;
+  return data.user;
 }
 
