@@ -364,8 +364,9 @@ export async function generateResume(
   const userInfo = {
     name: profile?.full_name || user.user_metadata?.full_name || user.email?.split("@")[0] || "Your Name",
     email: user.email || "",
-    phone: user.user_metadata?.phone || "",
+    phone: (profile as any)?.phone || user.user_metadata?.phone || "",
     location: profile?.location || user.user_metadata?.location || "",
+    links: ((profile as any)?.links as Array<{ label: string; url: string }>) || [],
   };
   
   const prompt = buildPrompt(
@@ -553,6 +554,7 @@ function buildPrompt(
     email: string;
     phone: string;
     location: string;
+    links: Array<{ label: string; url: string }>;
   }
 ) {
   const jobSummary = [
@@ -658,8 +660,11 @@ ${list}`;
     `Email: ${userInfo.email || "Not provided"}`,
     `Phone: ${userInfo.phone || "Not provided"}`,
     `Location: ${userInfo.location || "Not provided"}`,
+    userInfo.links && userInfo.links.length > 0
+      ? `Links: ${userInfo.links.map((link) => `${link.label}: ${link.url}`).join(", ")}`
+      : "Links: None provided",
     "",
-    "CRITICAL: You MUST use the exact name, email, and phone provided above. Do NOT use placeholder names like 'John Doe' or make up contact information.",
+    "CRITICAL: You MUST use the exact name, email, phone, and links provided above. Do NOT use placeholder names like 'John Doe' or make up contact information.",
     "",
     "Job description details:",
     jobSummary,
@@ -719,16 +724,6 @@ ${list}`;
     "   - Skills: Format as 'Category: skill1, skill2, skill3' with categories like 'Languages:', 'Frameworks:', 'Tools:'.",
     "   - Use compact, professional spacing throughout to fit maximum content on one page.",
     "",
-    "5. FORMATTING REQUIREMENTS (CRITICAL - Match Jake Ryan resume style):",
-    "   - Header: Name should be centered, large, bold, small caps. Contact info on one line with '|' separators.",
-    "   - Education/Experience: Use two-column layout - Title/Institution on left, Dates on right.",
-    "   - Dates: Format as 'MMM YYYY -- MMM YYYY' or 'MMM YYYY -- Present' (e.g., 'Aug. 2018 -- May 2021').",
-    "   - Organization/Location: Should be italicized and on second line.",
-    "   - Bullets: Use compact spacing, each bullet on its own line.",
-    "   - Projects: Format as 'Project Name | Tech Stack' with dates on right.",
-    "   - Skills: Format as 'Category: skill1, skill2, skill3' with categories like 'Languages:', 'Frameworks:', 'Tools:'.",
-    "   - Use compact, professional spacing throughout to fit maximum content on one page.",
-    "",
     "6. OUTPUT FORMAT:",
     "   - You MUST return valid JSON only. Do not include any text before or after the JSON object.",
     "   - The response must be valid JSON that matches the schema below.",
@@ -743,10 +738,9 @@ ${JSON.stringify(
       name: "string (MUST use the exact name from user info: " + userInfo.name + " - DO NOT use placeholder names)",
       phone: "string (use phone from user info if provided, otherwise omit)",
       email: "string (use email from user info: " + userInfo.email + " - DO NOT use placeholder emails)",
-      links: [
-        { label: "LinkedIn", url: "string (only if provided in user data)" },
-        { label: "GitHub", url: "string (only if provided in user data)" }
-      ]
+      links: userInfo.links && userInfo.links.length > 0
+        ? userInfo.links.map((link) => ({ label: link.label, url: link.url }))
+        : "array of { label: string, url: string } (only include links provided in user data, empty array if none)"
     },
     education: [
       {

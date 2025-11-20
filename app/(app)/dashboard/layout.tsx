@@ -7,6 +7,7 @@ import { BackgroundPattern } from "@/components/ui/background-pattern";
 
 const navItems = [
   { href: "/dashboard", label: "Overview" },
+  { href: "/dashboard/profile", label: "Profile" },
   { href: "/dashboard/library", label: "Resume data" },
   { href: "/dashboard/projects", label: "Projects" },
   { href: "/dashboard/job-descriptions", label: "Job descriptions" },

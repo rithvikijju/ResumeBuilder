@@ -160,29 +160,26 @@ export async function GET(
         if (yPos > maxY - lineHeight * 1.5) return;
         yPos += 0.02; // \vspace{-2pt} before item
         
-        // Two-column layout matching \resumeSubheading exactly:
-        // Line 1: \textbf{Institution} (left) | Dates (right)
+        // Line 1: \textbf{Institution} (left) | Location (right)
         doc.setFontSize(11); // Base font size
         doc.setFont(pdfFont, "bold");
-        const institutionText = edu.institution;
-        doc.text(institutionText, margin, yPos);
+        doc.text(edu.institution, margin, yPos);
+        
+        const locationText = edu.location || "";
+        if (locationText) {
+          const locWidth = doc.getTextWidth(locationText);
+          doc.text(locationText, pageWidth - margin - locWidth, yPos);
+        }
+        yPos += 0.08; // Line spacing
+        
+        // Line 2: \textit{\small Degree} (left) | \textit{\small Dates} (right)
+        doc.setFont(pdfFont, "italic");
+        doc.setFontSize(9); // \small
+        doc.text(edu.degree, margin, yPos);
         
         const dateText = `${edu.start_date || ""} -- ${edu.end_date || "Present"}`;
         const dateWidth = doc.getTextWidth(dateText);
         doc.text(dateText, pageWidth - margin - dateWidth, yPos);
-        yPos += 0.08; // Line spacing
-        
-        // Line 2: \textit{\small Location} (left) | \textit{\small} (right)
-        doc.setFont(pdfFont, "italic");
-        doc.setFontSize(9); // \small
-        const locationText = edu.location || "";
-        doc.text(locationText, margin, yPos);
-        yPos += 0.08; // Line spacing
-        
-        // Line 3: \textit{\small Degree} (left) | \textit{\small Dates} (right) - but dates already shown
-        doc.setFont(pdfFont, "italic");
-        doc.setFontSize(9); // \small
-        doc.text(edu.degree, margin, yPos);
         yPos += 0.1; // \vspace{-7pt} after subheading
       });
       yPos += 0.05; // Space after section
@@ -203,7 +200,6 @@ export async function GET(
         if (yPos > maxY - lineHeight * 1.5) return;
         yPos += 0.02; // \vspace{-2pt} before item
         
-        // \resumeSubheading format:
         // Line 1: \textbf{Title} (left) | Dates (right)
         doc.setFontSize(11);
         doc.setFont(pdfFont, "bold");

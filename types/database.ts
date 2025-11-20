@@ -15,6 +15,8 @@ export type Database = {
           full_name: string | null;
           headline: string | null;
           location: string | null;
+          phone: string | null;
+          links: Json | null;
           created_at: string | null;
           updated_at: string | null;
         };
@@ -23,6 +25,8 @@ export type Database = {
           full_name?: string | null;
           headline?: string | null;
           location?: string | null;
+          phone?: string | null;
+          links?: Json | null;
           created_at?: string | null;
           updated_at?: string | null;
         };
@@ -31,6 +35,8 @@ export type Database = {
           full_name?: string | null;
           headline?: string | null;
           location?: string | null;
+          phone?: string | null;
+          links?: Json | null;
           created_at?: string | null;
           updated_at?: string | null;
         };
