@@ -103,19 +103,6 @@ export async function GET(
       : null;
   };
 
-  // Title (if header is centered)
-  if (template.layout.headerStyle === "centered") {
-    doc.setFontSize(fontSize + 4);
-    doc.setFont(pdfFont, "bold");
-    const titleText = data.title || "Resume";
-    const titleWidth = doc.getTextWidth(titleText);
-    doc.text(titleText, (pageWidth - titleWidth) / 2, yPos);
-    yPos += lineHeight * 1.5;
-  } else {
-    addText(data.title || "Resume", fontSize + 2, true, margin, template.style.colors.primary);
-    yPos += lineHeight * 0.5;
-  }
-
   // Check if resume is structured format
   const isStructured = "header" in resume || "experience" in resume || "education" in resume;
 
@@ -144,85 +131,128 @@ export async function GET(
       }
     }
 
-    // Education
+    // Education - include all entries, compact formatting
     if (structuredResume.education && structuredResume.education.length > 0) {
       if (yPos > maxY - lineHeight * 2) return;
-      addText("EDUCATION", fontSize + 1, true, margin, template.style.colors.primary);
-      yPos += lineHeight * 0.3;
+      doc.setFontSize(fontSize + 1);
+      doc.setFont(pdfFont, "bold");
+      doc.setTextColor(0, 0, 0);
+      doc.text("EDUCATION", margin, yPos);
+      yPos += lineHeight * 0.4;
       
       structuredResume.education.forEach((edu) => {
-        if (yPos > maxY - lineHeight) return;
-        const eduText = `${edu.degree} - ${edu.institution}${edu.location ? `, ${edu.location}` : ""}`;
-        addText(eduText, fontSize, true, margin);
-        yPos += lineHeight * 0.1;
-        if (edu.start_date || edu.end_date) {
-          addText(`${edu.start_date || ""} - ${edu.end_date || "Present"}`, fontSize - 1, false, margin + 0.1);
-          yPos += lineHeight * 0.2;
-        }
+        if (yPos > maxY - lineHeight * 1.5) return;
+        doc.setFontSize(fontSize);
+        doc.setFont(pdfFont, "bold");
+        const eduText = `${edu.institution}${edu.location ? `, ${edu.location}` : ""}`;
+        doc.text(eduText, margin, yPos);
+        const dateText = `${edu.start_date || ""} -- ${edu.end_date || "Present"}`;
+        const dateWidth = doc.getTextWidth(dateText);
+        doc.text(dateText, pageWidth - margin - dateWidth, yPos);
+        yPos += lineHeight * 0.25;
+        doc.setFont(pdfFont, "normal");
+        doc.text(edu.degree, margin + 0.1, yPos);
+        yPos += lineHeight * 0.35;
       });
-      yPos += lineHeight * 0.3;
+      yPos += lineHeight * 0.2;
     }
 
-    // Experience
+    // Experience - include all entries with bullets, compact spacing
     if (structuredResume.experience && structuredResume.experience.length > 0) {
       if (yPos > maxY - lineHeight * 2) return;
-      addText("EXPERIENCE", fontSize + 1, true, margin, template.style.colors.primary);
-      yPos += lineHeight * 0.3;
+      doc.setFontSize(fontSize + 1);
+      doc.setFont(pdfFont, "bold");
+      doc.text("EXPERIENCE", margin, yPos);
+      yPos += lineHeight * 0.4;
       
       structuredResume.experience.forEach((exp) => {
-        if (yPos > maxY - lineHeight) return;
-        const expTitle = `${exp.title} | ${exp.organization}${exp.location ? `, ${exp.location}` : ""}`;
-        addText(expTitle, fontSize, true, margin);
-        yPos += lineHeight * 0.1;
-        if (exp.start_date || exp.end_date) {
-          addText(`${exp.start_date || ""} - ${exp.end_date || "Present"}`, fontSize - 1, false, margin + 0.1);
-          yPos += lineHeight * 0.2;
-        }
+        if (yPos > maxY - lineHeight * 1.5) return;
+        doc.setFontSize(fontSize);
+        doc.setFont(pdfFont, "bold");
+        doc.text(exp.title, margin, yPos);
+        const dateText = `${exp.start_date || ""} -- ${exp.end_date || "Present"}`;
+        const dateWidth = doc.getTextWidth(dateText);
+        doc.text(dateText, pageWidth - margin - dateWidth, yPos);
+        yPos += lineHeight * 0.25;
+        doc.setFont(pdfFont, "italic");
+        doc.setFontSize(fontSize - 1);
+        const orgText = `${exp.organization}${exp.location ? `, ${exp.location}` : ""}`;
+        doc.text(orgText, margin, yPos);
+        yPos += lineHeight * 0.3;
+        doc.setFont(pdfFont, "normal");
+        doc.setFontSize(fontSize);
+        
+        // Include all bullets, but stop if we run out of space
         exp.bullets.forEach((bullet) => {
           if (yPos > maxY - lineHeight) return;
-          addText(`• ${bullet}`, fontSize, false, margin + 0.1);
-          yPos += lineHeight * 0.2;
+          const bulletText = `• ${bullet}`;
+          const lines = doc.splitTextToSize(bulletText, contentWidth - 0.15);
+          doc.text(lines, margin + 0.15, yPos);
+          yPos += lines.length * lineHeight * 0.85;
         });
-        yPos += lineHeight * 0.1;
+        yPos += lineHeight * 0.15;
       });
-      yPos += lineHeight * 0.3;
+      yPos += lineHeight * 0.2;
     }
 
-    // Projects
+    // Projects - include all entries with tech stack
     if (structuredResume.projects && structuredResume.projects.length > 0) {
       if (yPos > maxY - lineHeight * 2) return;
-      addText("PROJECTS", fontSize + 1, true, margin, template.style.colors.primary);
-      yPos += lineHeight * 0.3;
+      doc.setFontSize(fontSize + 1);
+      doc.setFont(pdfFont, "bold");
+      doc.text("PROJECTS", margin, yPos);
+      yPos += lineHeight * 0.4;
       
       structuredResume.projects.forEach((project) => {
-        if (yPos > maxY - lineHeight) return;
-        const projTitle = project.name + (project.tech_stack && project.tech_stack.length > 0 ? ` (${project.tech_stack.join(", ")})` : "");
-        addText(projTitle, fontSize, true, margin);
-        yPos += lineHeight * 0.1;
-        if (project.start_date || project.end_date) {
-          addText(`${project.start_date || ""} - ${project.end_date || "Present"}`, fontSize - 1, false, margin + 0.1);
-          yPos += lineHeight * 0.2;
-        }
+        if (yPos > maxY - lineHeight * 1.5) return;
+        doc.setFontSize(fontSize);
+        doc.setFont(pdfFont, "bold");
+        const projName = project.name;
+        const techStack = project.tech_stack && project.tech_stack.length > 0 
+          ? ` | ${project.tech_stack.join(", ")}`
+          : "";
+        const projTitle = `${projName}${techStack}`;
+        doc.text(projTitle, margin, yPos);
+        const dateText = `${project.start_date || ""} -- ${project.end_date || "Present"}`;
+        const dateWidth = doc.getTextWidth(dateText);
+        doc.text(dateText, pageWidth - margin - dateWidth, yPos);
+        yPos += lineHeight * 0.3;
+        doc.setFont(pdfFont, "normal");
+        
         project.bullets.forEach((bullet) => {
           if (yPos > maxY - lineHeight) return;
-          addText(`• ${bullet}`, fontSize, false, margin + 0.1);
-          yPos += lineHeight * 0.2;
+          const bulletText = `• ${bullet}`;
+          const lines = doc.splitTextToSize(bulletText, contentWidth - 0.15);
+          doc.text(lines, margin + 0.15, yPos);
+          yPos += lines.length * lineHeight * 0.85;
         });
-        yPos += lineHeight * 0.1;
+        yPos += lineHeight * 0.15;
       });
-      yPos += lineHeight * 0.3;
+      yPos += lineHeight * 0.2;
     }
 
-    // Technical Skills
+    // Technical Skills - compact format with categories
     if (template.layout.showSkills && structuredResume.technical_skills && yPos < maxY - lineHeight * 2) {
-      addText("TECHNICAL SKILLS", fontSize + 1, true, margin, template.style.colors.primary);
-      yPos += lineHeight * 0.3;
+      doc.setFontSize(fontSize + 1);
+      doc.setFont(pdfFont, "bold");
+      doc.text("TECHNICAL SKILLS", margin, yPos);
+      yPos += lineHeight * 0.4;
+      doc.setFont(pdfFont, "normal");
+      doc.setFontSize(fontSize);
       
-      const allSkills: string[] = [];
-      Object.values(structuredResume.technical_skills).forEach((skillArray) => {
-        allSkills.push(...skillArray);
+      const skillLines: string[] = [];
+      Object.entries(structuredResume.technical_skills).forEach(([category, skills]) => {
+        if (skills && skills.length > 0) {
+          skillLines.push(`${category}: ${skills.join(", ")}`);
+        }
       });
-      addText(allSkills.join(" • "), fontSize, false, margin);
+      
+      skillLines.forEach((line) => {
+        if (yPos > maxY - lineHeight) return;
+        const lines = doc.splitTextToSize(line, contentWidth);
+        doc.text(lines, margin, yPos);
+        yPos += lines.length * lineHeight * 0.9;
+      });
     }
   } else {
     // Handle standard resume format
