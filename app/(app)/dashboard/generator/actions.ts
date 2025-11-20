@@ -232,10 +232,18 @@ export async function generateResume(
     .eq("user_id", user.id)
     .maybeSingle();
 
-  // Fetch job description and ALL available data
-  const [jobDescriptionRes, allProjectsRes, allExperiencesRes, allEducationRes, allSkillsRes] =
+  // Fetch user profile for name, email, phone, etc.
+  const profilePromise = supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  // Fetch job description, profile, and ALL available data
+  const [jobDescriptionRes, profileRes, allProjectsRes, allExperiencesRes, allEducationRes, allSkillsRes] =
     await Promise.all([
       jobDescriptionPromise,
+      profilePromise,
       supabase
         .from("project_records")
         .select("*")
@@ -352,6 +360,14 @@ export async function generateResume(
   }
 
   const template = (await getTemplateById(templateId)) || (await getTemplateById("cs"))!;
+  const profile = profileRes.data;
+  const userInfo = {
+    name: profile?.full_name || user.user_metadata?.full_name || user.email?.split("@")[0] || "Your Name",
+    email: user.email || "",
+    phone: user.user_metadata?.phone || "",
+    location: profile?.location || user.user_metadata?.location || "",
+  };
+  
   const prompt = buildPrompt(
     jobDescription,
     projects,
@@ -359,7 +375,8 @@ export async function generateResume(
     education,
     skills,
     templateId,
-    template
+    template,
+    userInfo
   );
   const openai = getOpenAIClient();
 
@@ -530,7 +547,13 @@ function buildPrompt(
     skills: string[] | null;
   }[],
   templateId: string,
-  template: Awaited<ReturnType<typeof getTemplateById>>
+  template: Awaited<ReturnType<typeof getTemplateById>>,
+  userInfo: {
+    name: string;
+    email: string;
+    phone: string;
+    location: string;
+  }
 ) {
   const jobSummary = [
     jobDescription.role_title ? `Role: ${jobDescription.role_title}` : null,
@@ -630,6 +653,14 @@ ${list}`;
     "You are an expert resume writer.",
     "Use the latest best practices for ATS-friendly resumes tailored to the job description.",
     "",
+    "USER INFORMATION (USE THESE EXACT VALUES - DO NOT MAKE UP NAMES OR CONTACT INFO):",
+    `Name: ${userInfo.name}`,
+    `Email: ${userInfo.email || "Not provided"}`,
+    `Phone: ${userInfo.phone || "Not provided"}`,
+    `Location: ${userInfo.location || "Not provided"}`,
+    "",
+    "CRITICAL: You MUST use the exact name, email, and phone provided above. Do NOT use placeholder names like 'John Doe' or make up contact information.",
+    "",
     "Job description details:",
     jobSummary,
     "",
@@ -678,7 +709,27 @@ ${list}`;
     `   - Use proper section headers, date formats (${template.formatting.dateFormat}), and bullet styles (${template.formatting.bulletStyle}).`,
     `   - Ensure the resume looks professional and matches industry standards for ${template.category} resumes.`,
     "",
-    "5. OUTPUT FORMAT:",
+    "5. FORMATTING REQUIREMENTS (CRITICAL - Match Jake Ryan resume style):",
+    "   - Header: Name should be centered, large, bold, small caps. Contact info on one line with '|' separators.",
+    "   - Education/Experience: Use two-column layout - Title/Institution on left, Dates on right.",
+    "   - Dates: Format as 'MMM YYYY -- MMM YYYY' or 'MMM YYYY -- Present' (e.g., 'Aug. 2018 -- May 2021').",
+    "   - Organization/Location: Should be italicized and on second line.",
+    "   - Bullets: Use compact spacing, each bullet on its own line.",
+    "   - Projects: Format as 'Project Name | Tech Stack' with dates on right.",
+    "   - Skills: Format as 'Category: skill1, skill2, skill3' with categories like 'Languages:', 'Frameworks:', 'Tools:'.",
+    "   - Use compact, professional spacing throughout to fit maximum content on one page.",
+    "",
+    "5. FORMATTING REQUIREMENTS (CRITICAL - Match Jake Ryan resume style):",
+    "   - Header: Name should be centered, large, bold, small caps. Contact info on one line with '|' separators.",
+    "   - Education/Experience: Use two-column layout - Title/Institution on left, Dates on right.",
+    "   - Dates: Format as 'MMM YYYY -- MMM YYYY' or 'MMM YYYY -- Present' (e.g., 'Aug. 2018 -- May 2021').",
+    "   - Organization/Location: Should be italicized and on second line.",
+    "   - Bullets: Use compact spacing, each bullet on its own line.",
+    "   - Projects: Format as 'Project Name | Tech Stack' with dates on right.",
+    "   - Skills: Format as 'Category: skill1, skill2, skill3' with categories like 'Languages:', 'Frameworks:', 'Tools:'.",
+    "   - Use compact, professional spacing throughout to fit maximum content on one page.",
+    "",
+    "6. OUTPUT FORMAT:",
     "   - You MUST return valid JSON only. Do not include any text before or after the JSON object.",
     "   - The response must be valid JSON that matches the schema below.",
     "",
@@ -689,12 +740,12 @@ Use this STRUCTURED JSON format (match the exact structure):
 ${JSON.stringify(
   {
     header: {
-      name: "string (from user profile)",
-      phone: "string (from user profile)",
-      email: "string (from user profile)",
+      name: "string (MUST use the exact name from user info: " + userInfo.name + " - DO NOT use placeholder names)",
+      phone: "string (use phone from user info if provided, otherwise omit)",
+      email: "string (use email from user info: " + userInfo.email + " - DO NOT use placeholder emails)",
       links: [
-        { label: "LinkedIn", url: "string" },
-        { label: "GitHub", url: "string" }
+        { label: "LinkedIn", url: "string (only if provided in user data)" },
+        { label: "GitHub", url: "string (only if provided in user data)" }
       ]
     },
     education: [
