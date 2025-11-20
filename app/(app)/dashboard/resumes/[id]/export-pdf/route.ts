@@ -116,98 +116,214 @@ export async function GET(
     yPos += lineHeight * 0.5;
   }
 
-  // Summary (if template shows it)
-  if (template.layout.showSummary && resume.summary && resume.summary.length > 0) {
-    const sectionTitle = template.category === "finance" ? "PROFESSIONAL SUMMARY" : "Professional Summary";
-    addText(sectionTitle, fontSize + 1, true, margin, template.style.colors.primary);
-    yPos += lineHeight * 0.3;
+  // Check if resume is structured format
+  const isStructured = "header" in resume || "experience" in resume || "education" in resume;
+
+  if (isStructured) {
+    // Handle structured resume format
+    const structuredResume = resume as Extract<typeof resume, { header?: unknown }>;
     
-    resume.summary.slice(0, 3).forEach((item) => { // Limit to 3 for one page
-      const bullet = template.formatting.bulletStyle === "bullet" ? "•" : template.formatting.bulletStyle === "dash" ? "—" : "";
-      addText(`${bullet} ${item.sentence}`, fontSize, false, margin + (bullet ? 0.1 : 0));
-      yPos += lineHeight * 0.2;
-    });
-    yPos += lineHeight * 0.5;
-  }
-
-  // Sections in template order
-  const sectionsToShow = template.layout.sectionOrder
-    .map((title) => resume.sections.find((s) => s.title === title))
-    .filter(Boolean) as typeof resume.sections;
-
-  // Add any sections not in template order
-  const remainingSections = resume.sections.filter(
-    (s) => !template.layout.sectionOrder.includes(s.title)
-  );
-  sectionsToShow.push(...remainingSections);
-
-  sectionsToShow.forEach((section) => {
-    if (yPos > maxY - lineHeight * 2) return; // Skip if no space
-    
-    const sectionTitle = template.category === "finance" ? section.title.toUpperCase() : section.title;
-    addText(sectionTitle, fontSize + 1, true, margin, template.style.colors.primary);
-    yPos += lineHeight * 0.3;
-
-    section.items.forEach((item) => {
-      if (yPos > maxY - lineHeight) return; // Skip if no space
-      
-      if (item.heading) {
-        addText(item.heading, fontSize, true, margin);
-        yPos += lineHeight * 0.2;
+    // Header info (if available)
+    if (structuredResume.header) {
+      const header = structuredResume.header;
+      if (header.name) {
+        doc.setFontSize(fontSize + 4);
+        doc.setFont(pdfFont, "bold");
+        const nameWidth = doc.getTextWidth(header.name);
+        if (template.layout.headerStyle === "centered") {
+          doc.text(header.name, (pageWidth - nameWidth) / 2, yPos);
+        } else {
+          doc.text(header.name, margin, yPos);
+        }
+        yPos += lineHeight * 1.5;
       }
-      
-      const bullet = template.formatting.bulletStyle === "bullet" ? "•" : template.formatting.bulletStyle === "dash" ? "—" : "";
-      addText(`${bullet} ${item.content}`, fontSize, false, margin + (bullet ? 0.1 : 0));
-      yPos += lineHeight * 0.2;
-
-      if (item.metrics && item.metrics.length > 0) {
-        const metricsText = item.metrics
-          .map((m) => `${m.value} ${m.label}`)
-          .join(" • ");
-        addText(metricsText, fontSize - 1, false, margin + 0.2);
-        yPos += lineHeight * 0.2;
+      if (header.email || header.phone) {
+        const contactInfo = [header.email, header.phone].filter(Boolean).join(" | ");
+        addText(contactInfo, fontSize - 1, false, template.layout.headerStyle === "centered" ? (pageWidth - doc.getTextWidth(contactInfo)) / 2 : margin);
+        yPos += lineHeight * 0.5;
       }
-      yPos += lineHeight * 0.1;
-    });
-    yPos += lineHeight * 0.3;
-  });
+    }
 
-  // Skills (if template shows it)
-  if (template.layout.showSkills && resume.skills && yPos < maxY - lineHeight * 2) {
-    addText("SKILLS", fontSize + 1, true, margin, template.style.colors.primary);
-    yPos += lineHeight * 0.3;
+    // Education
+    if (structuredResume.education && structuredResume.education.length > 0) {
+      if (yPos > maxY - lineHeight * 2) return;
+      addText("EDUCATION", fontSize + 1, true, margin, template.style.colors.primary);
+      yPos += lineHeight * 0.3;
+      
+      structuredResume.education.forEach((edu) => {
+        if (yPos > maxY - lineHeight) return;
+        const eduText = `${edu.degree} - ${edu.institution}${edu.location ? `, ${edu.location}` : ""}`;
+        addText(eduText, fontSize, true, margin);
+        yPos += lineHeight * 0.1;
+        if (edu.start_date || edu.end_date) {
+          addText(`${edu.start_date || ""} - ${edu.end_date || "Present"}`, fontSize - 1, false, margin + 0.1);
+          yPos += lineHeight * 0.2;
+        }
+      });
+      yPos += lineHeight * 0.3;
+    }
 
-    if (template.layout.skillsFormat === "inline") {
-      const allSkills = [
-        ...(resume.skills.primary || []),
-        ...(resume.skills.secondary || []),
-        ...(resume.skills.tools || []),
-      ];
+    // Experience
+    if (structuredResume.experience && structuredResume.experience.length > 0) {
+      if (yPos > maxY - lineHeight * 2) return;
+      addText("EXPERIENCE", fontSize + 1, true, margin, template.style.colors.primary);
+      yPos += lineHeight * 0.3;
+      
+      structuredResume.experience.forEach((exp) => {
+        if (yPos > maxY - lineHeight) return;
+        const expTitle = `${exp.title} | ${exp.organization}${exp.location ? `, ${exp.location}` : ""}`;
+        addText(expTitle, fontSize, true, margin);
+        yPos += lineHeight * 0.1;
+        if (exp.start_date || exp.end_date) {
+          addText(`${exp.start_date || ""} - ${exp.end_date || "Present"}`, fontSize - 1, false, margin + 0.1);
+          yPos += lineHeight * 0.2;
+        }
+        exp.bullets.forEach((bullet) => {
+          if (yPos > maxY - lineHeight) return;
+          addText(`• ${bullet}`, fontSize, false, margin + 0.1);
+          yPos += lineHeight * 0.2;
+        });
+        yPos += lineHeight * 0.1;
+      });
+      yPos += lineHeight * 0.3;
+    }
+
+    // Projects
+    if (structuredResume.projects && structuredResume.projects.length > 0) {
+      if (yPos > maxY - lineHeight * 2) return;
+      addText("PROJECTS", fontSize + 1, true, margin, template.style.colors.primary);
+      yPos += lineHeight * 0.3;
+      
+      structuredResume.projects.forEach((project) => {
+        if (yPos > maxY - lineHeight) return;
+        const projTitle = project.name + (project.tech_stack && project.tech_stack.length > 0 ? ` (${project.tech_stack.join(", ")})` : "");
+        addText(projTitle, fontSize, true, margin);
+        yPos += lineHeight * 0.1;
+        if (project.start_date || project.end_date) {
+          addText(`${project.start_date || ""} - ${project.end_date || "Present"}`, fontSize - 1, false, margin + 0.1);
+          yPos += lineHeight * 0.2;
+        }
+        project.bullets.forEach((bullet) => {
+          if (yPos > maxY - lineHeight) return;
+          addText(`• ${bullet}`, fontSize, false, margin + 0.1);
+          yPos += lineHeight * 0.2;
+        });
+        yPos += lineHeight * 0.1;
+      });
+      yPos += lineHeight * 0.3;
+    }
+
+    // Technical Skills
+    if (template.layout.showSkills && structuredResume.technical_skills && yPos < maxY - lineHeight * 2) {
+      addText("TECHNICAL SKILLS", fontSize + 1, true, margin, template.style.colors.primary);
+      yPos += lineHeight * 0.3;
+      
+      const allSkills: string[] = [];
+      Object.values(structuredResume.technical_skills).forEach((skillArray) => {
+        allSkills.push(...skillArray);
+      });
       addText(allSkills.join(" • "), fontSize, false, margin);
-    } else {
-      if (resume.skills.primary && resume.skills.primary.length > 0) {
-        addText(`Primary: ${resume.skills.primary.join(", ")}`, fontSize, false, margin);
+    }
+  } else {
+    // Handle standard resume format
+    // Summary (if template shows it)
+    if (template.layout.showSummary && resume.summary && resume.summary.length > 0) {
+      const sectionTitle = template.category === "finance" ? "PROFESSIONAL SUMMARY" : "Professional Summary";
+      addText(sectionTitle, fontSize + 1, true, margin, template.style.colors.primary);
+      yPos += lineHeight * 0.3;
+      
+      resume.summary.slice(0, 3).forEach((item) => { // Limit to 3 for one page
+        const bullet = template.formatting.bulletStyle === "bullet" ? "•" : template.formatting.bulletStyle === "dash" ? "—" : "";
+        addText(`${bullet} ${item.sentence}`, fontSize, false, margin + (bullet ? 0.1 : 0));
         yPos += lineHeight * 0.2;
-      }
-      if (resume.skills.secondary && resume.skills.secondary.length > 0) {
-        addText(`Secondary: ${resume.skills.secondary.join(", ")}`, fontSize, false, margin);
-        yPos += lineHeight * 0.2;
-      }
-      if (resume.skills.tools && resume.skills.tools.length > 0) {
-        addText(`Tools: ${resume.skills.tools.join(", ")}`, fontSize, false, margin);
+      });
+      yPos += lineHeight * 0.5;
+    }
+
+    // Sections in template order
+    if ("sections" in resume && resume.sections) {
+      const sectionsToShow = template.layout.sectionOrder
+        .map((title) => resume.sections.find((s) => s.title === title))
+        .filter(Boolean) as typeof resume.sections;
+
+      // Add any sections not in template order
+      const remainingSections = resume.sections.filter(
+        (s) => !template.layout.sectionOrder.includes(s.title)
+      );
+      sectionsToShow.push(...remainingSections);
+
+      sectionsToShow.forEach((section) => {
+        if (yPos > maxY - lineHeight * 2) return; // Skip if no space
+        
+        const sectionTitle = template.category === "finance" ? section.title.toUpperCase() : section.title;
+        addText(sectionTitle, fontSize + 1, true, margin, template.style.colors.primary);
+        yPos += lineHeight * 0.3;
+
+        section.items.forEach((item) => {
+          if (yPos > maxY - lineHeight) return; // Skip if no space
+          
+          if (item.heading) {
+            addText(item.heading, fontSize, true, margin);
+            yPos += lineHeight * 0.2;
+          }
+          
+          const bullet = template.formatting.bulletStyle === "bullet" ? "•" : template.formatting.bulletStyle === "dash" ? "—" : "";
+          addText(`${bullet} ${item.content}`, fontSize, false, margin + (bullet ? 0.1 : 0));
+          yPos += lineHeight * 0.2;
+
+          if (item.metrics && item.metrics.length > 0) {
+            const metricsText = item.metrics
+              .map((m) => `${m.value} ${m.label}`)
+              .join(" • ");
+            addText(metricsText, fontSize - 1, false, margin + 0.2);
+            yPos += lineHeight * 0.2;
+          }
+          yPos += lineHeight * 0.1;
+        });
+        yPos += lineHeight * 0.3;
+      });
+    }
+
+    // Skills (if template shows it)
+    if (template.layout.showSkills && resume.skills && yPos < maxY - lineHeight * 2) {
+      addText("SKILLS", fontSize + 1, true, margin, template.style.colors.primary);
+      yPos += lineHeight * 0.3;
+
+      if (template.layout.skillsFormat === "inline") {
+        const allSkills = [
+          ...(resume.skills.primary || []),
+          ...(resume.skills.secondary || []),
+          ...(resume.skills.tools || []),
+        ];
+        addText(allSkills.join(" • "), fontSize, false, margin);
+      } else {
+        if (resume.skills.primary && resume.skills.primary.length > 0) {
+          addText(`Primary: ${resume.skills.primary.join(", ")}`, fontSize, false, margin);
+          yPos += lineHeight * 0.2;
+        }
+        if (resume.skills.secondary && resume.skills.secondary.length > 0) {
+          addText(`Secondary: ${resume.skills.secondary.join(", ")}`, fontSize, false, margin);
+          yPos += lineHeight * 0.2;
+        }
+        if (resume.skills.tools && resume.skills.tools.length > 0) {
+          addText(`Tools: ${resume.skills.tools.join(", ")}`, fontSize, false, margin);
+        }
       }
     }
   }
 
   // Generate PDF buffer
-  const pdfBlob = doc.output("blob");
-  const arrayBuffer = await pdfBlob.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
+  const pdfArrayBuffer = doc.output("arraybuffer");
+  const pdfBuffer = Buffer.from(pdfArrayBuffer);
 
-  return new Response(buffer, {
+  const safeFilename = (data.title || "resume").replace(/[^a-z0-9]/gi, "_");
+  const originalFilename = data.title || "resume";
+
+  return new Response(pdfBuffer, {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${(data.title || "resume").replace(/[^a-z0-9]/gi, "_")}.pdf"`,
+      "Content-Disposition": `attachment; filename="${safeFilename}.pdf"; filename*=UTF-8''${encodeURIComponent(originalFilename)}.pdf`,
+      "Content-Length": pdfBuffer.length.toString(),
     },
   });
 }
