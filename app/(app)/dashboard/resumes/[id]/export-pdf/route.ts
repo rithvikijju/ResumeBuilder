@@ -110,101 +110,132 @@ export async function GET(
     // Handle structured resume format
     const structuredResume = resume as Extract<typeof resume, { header?: unknown }>;
     
-    // Header info (if available)
+    // Header info - Professional formatting matching LaTeX style
     if (structuredResume.header) {
       const header = structuredResume.header;
       if (header.name) {
-        doc.setFontSize(fontSize + 4);
+        // Large, bold, centered name (matching \Huge \scshape in LaTeX)
+        doc.setFontSize(20); // Large size
         doc.setFont(pdfFont, "bold");
-        const nameWidth = doc.getTextWidth(header.name);
-        if (template.layout.headerStyle === "centered") {
-          doc.text(header.name, (pageWidth - nameWidth) / 2, yPos);
-        } else {
-          doc.text(header.name, margin, yPos);
+        const nameText = header.name.toUpperCase(); // Small caps effect
+        const nameWidth = doc.getTextWidth(nameText);
+        doc.text(nameText, (pageWidth - nameWidth) / 2, yPos); // Centered
+        yPos += 0.15; // Small space after name
+      }
+      if (header.email || header.phone || (header.links && header.links.length > 0)) {
+        // Contact info on one line with separators
+        doc.setFontSize(fontSize - 1); // Small font
+        doc.setFont(pdfFont, "normal");
+        const contactParts: string[] = [];
+        if (header.phone) contactParts.push(header.phone);
+        if (header.email) contactParts.push(header.email);
+        if (header.links && header.links.length > 0) {
+          header.links.forEach((link) => {
+            const url = link.url.replace(/^https?:\/\//, "");
+            contactParts.push(url);
+          });
         }
-        yPos += lineHeight * 1.5;
+        const contactText = contactParts.join(" | ");
+        const contactWidth = doc.getTextWidth(contactText);
+        doc.text(contactText, (pageWidth - contactWidth) / 2, yPos); // Centered
+        yPos += 0.2; // Space after contact
       }
-      if (header.email || header.phone) {
-        const contactInfo = [header.email, header.phone].filter(Boolean).join(" | ");
-        addText(contactInfo, fontSize - 1, false, template.layout.headerStyle === "centered" ? (pageWidth - doc.getTextWidth(contactInfo)) / 2 : margin);
-        yPos += lineHeight * 0.5;
-      }
+      yPos += 0.1; // Extra space before sections
     }
 
-    // Education - include all entries, compact formatting
+    // Education - Professional two-column format
     if (structuredResume.education && structuredResume.education.length > 0) {
       if (yPos > maxY - lineHeight * 2) return;
+      // Section header with underline effect
       doc.setFontSize(fontSize + 1);
       doc.setFont(pdfFont, "bold");
       doc.setTextColor(0, 0, 0);
       doc.text("EDUCATION", margin, yPos);
-      yPos += lineHeight * 0.4;
+      // Draw underline
+      doc.setLineWidth(0.5);
+      doc.line(margin, yPos + 0.02, pageWidth - margin, yPos + 0.02);
+      yPos += 0.12; // Compact spacing
       
       structuredResume.education.forEach((edu) => {
         if (yPos > maxY - lineHeight * 1.5) return;
+        // Two-column layout: Institution/Location on left, Dates on right
         doc.setFontSize(fontSize);
         doc.setFont(pdfFont, "bold");
-        const eduText = `${edu.institution}${edu.location ? `, ${edu.location}` : ""}`;
-        doc.text(eduText, margin, yPos);
+        const institutionText = `${edu.institution}${edu.location ? `, ${edu.location}` : ""}`;
+        doc.text(institutionText, margin, yPos);
+        
         const dateText = `${edu.start_date || ""} -- ${edu.end_date || "Present"}`;
         const dateWidth = doc.getTextWidth(dateText);
         doc.text(dateText, pageWidth - margin - dateWidth, yPos);
-        yPos += lineHeight * 0.25;
+        yPos += 0.08; // Tight spacing
+        
+        // Degree on second line, italic
         doc.setFont(pdfFont, "normal");
-        doc.text(edu.degree, margin + 0.1, yPos);
-        yPos += lineHeight * 0.35;
+        doc.setFontSize(fontSize);
+        doc.text(edu.degree, margin, yPos);
+        yPos += 0.12; // Space between entries
       });
-      yPos += lineHeight * 0.2;
+      yPos += 0.05; // Space after section
     }
 
-    // Experience - include all entries with bullets, compact spacing
+    // Experience - Professional two-column format with bullets
     if (structuredResume.experience && structuredResume.experience.length > 0) {
       if (yPos > maxY - lineHeight * 2) return;
+      // Section header with underline
       doc.setFontSize(fontSize + 1);
       doc.setFont(pdfFont, "bold");
       doc.text("EXPERIENCE", margin, yPos);
-      yPos += lineHeight * 0.4;
+      doc.setLineWidth(0.5);
+      doc.line(margin, yPos + 0.02, pageWidth - margin, yPos + 0.02);
+      yPos += 0.12;
       
       structuredResume.experience.forEach((exp) => {
         if (yPos > maxY - lineHeight * 1.5) return;
+        // Two-column: Title on left, Dates on right
         doc.setFontSize(fontSize);
         doc.setFont(pdfFont, "bold");
         doc.text(exp.title, margin, yPos);
         const dateText = `${exp.start_date || ""} -- ${exp.end_date || "Present"}`;
         const dateWidth = doc.getTextWidth(dateText);
         doc.text(dateText, pageWidth - margin - dateWidth, yPos);
-        yPos += lineHeight * 0.25;
+        yPos += 0.08;
+        
+        // Organization/Location on second line, italic
         doc.setFont(pdfFont, "italic");
         doc.setFontSize(fontSize - 1);
         const orgText = `${exp.organization}${exp.location ? `, ${exp.location}` : ""}`;
         doc.text(orgText, margin, yPos);
-        yPos += lineHeight * 0.3;
+        yPos += 0.1;
+        
+        // Bullets with compact spacing
         doc.setFont(pdfFont, "normal");
         doc.setFontSize(fontSize);
-        
-        // Include all bullets, but stop if we run out of space
         exp.bullets.forEach((bullet) => {
           if (yPos > maxY - lineHeight) return;
           const bulletText = `• ${bullet}`;
           const lines = doc.splitTextToSize(bulletText, contentWidth - 0.15);
           doc.text(lines, margin + 0.15, yPos);
-          yPos += lines.length * lineHeight * 0.85;
+          yPos += lines.length * 0.08; // Very tight spacing
         });
-        yPos += lineHeight * 0.15;
+        yPos += 0.05; // Space between experiences
       });
-      yPos += lineHeight * 0.2;
+      yPos += 0.05;
     }
 
-    // Projects - include all entries with tech stack
+    // Projects - Professional format with tech stack
     if (structuredResume.projects && structuredResume.projects.length > 0) {
       if (yPos > maxY - lineHeight * 2) return;
+      // Section header with underline
       doc.setFontSize(fontSize + 1);
       doc.setFont(pdfFont, "bold");
       doc.text("PROJECTS", margin, yPos);
-      yPos += lineHeight * 0.4;
+      doc.setLineWidth(0.5);
+      doc.line(margin, yPos + 0.02, pageWidth - margin, yPos + 0.02);
+      yPos += 0.12;
       
       structuredResume.projects.forEach((project) => {
         if (yPos > maxY - lineHeight * 1.5) return;
+        // Two-column: Project Name | Tech Stack on left, Dates on right
         doc.setFontSize(fontSize);
         doc.setFont(pdfFont, "bold");
         const projName = project.name;
@@ -216,42 +247,49 @@ export async function GET(
         const dateText = `${project.start_date || ""} -- ${project.end_date || "Present"}`;
         const dateWidth = doc.getTextWidth(dateText);
         doc.text(dateText, pageWidth - margin - dateWidth, yPos);
-        yPos += lineHeight * 0.3;
+        yPos += 0.1;
         doc.setFont(pdfFont, "normal");
         
+        // Bullets with compact spacing
         project.bullets.forEach((bullet) => {
           if (yPos > maxY - lineHeight) return;
           const bulletText = `• ${bullet}`;
           const lines = doc.splitTextToSize(bulletText, contentWidth - 0.15);
           doc.text(lines, margin + 0.15, yPos);
-          yPos += lines.length * lineHeight * 0.85;
+          yPos += lines.length * 0.08; // Very tight spacing
         });
-        yPos += lineHeight * 0.15;
+        yPos += 0.05; // Space between projects
       });
-      yPos += lineHeight * 0.2;
+      yPos += 0.05;
     }
 
-    // Technical Skills - compact format with categories
+    // Technical Skills - Professional format with categories
     if (template.layout.showSkills && structuredResume.technical_skills && yPos < maxY - lineHeight * 2) {
+      // Section header with underline
       doc.setFontSize(fontSize + 1);
       doc.setFont(pdfFont, "bold");
       doc.text("TECHNICAL SKILLS", margin, yPos);
-      yPos += lineHeight * 0.4;
+      doc.setLineWidth(0.5);
+      doc.line(margin, yPos + 0.02, pageWidth - margin, yPos + 0.02);
+      yPos += 0.12;
       doc.setFont(pdfFont, "normal");
       doc.setFontSize(fontSize);
       
+      // Format as "Category: skill1, skill2, skill3"
       const skillLines: string[] = [];
       Object.entries(structuredResume.technical_skills).forEach(([category, skills]) => {
         if (skills && skills.length > 0) {
-          skillLines.push(`${category}: ${skills.join(", ")}`);
+          skillLines.push(`\\textbf{${category}}: ${skills.join(", ")}`);
         }
       });
       
       skillLines.forEach((line) => {
         if (yPos > maxY - lineHeight) return;
-        const lines = doc.splitTextToSize(line, contentWidth);
+        // Remove LaTeX commands for PDF (they're for LaTeX export)
+        const cleanLine = line.replace(/\\textbf\{([^}]+)\}/g, "$1");
+        const lines = doc.splitTextToSize(cleanLine, contentWidth);
         doc.text(lines, margin, yPos);
-        yPos += lines.length * lineHeight * 0.9;
+        yPos += lines.length * 0.08; // Tight spacing
       });
     }
   } else {
