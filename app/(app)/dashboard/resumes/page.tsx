@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { ResumeRecord } from "@/types/database";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { deleteResume } from "./actions";
 
 async function getResumes(): Promise<ResumeRecord[]> {
   const supabase = await createSupabaseServerClient();
@@ -74,12 +75,23 @@ export default async function ResumeListPage() {
                   })}
                 </p>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-2">
                 <Link href={`/dashboard/resumes/${resume.id}`}>
                   <Button variant="secondary" size="sm" className="w-full">
                     View draft
                   </Button>
                 </Link>
+                <form action={deleteResume}>
+                  <input type="hidden" name="id" value={resume.id} />
+                  <Button 
+                    type="submit" 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    Delete
+                  </Button>
+                </form>
               </CardContent>
             </Card>
           ))}

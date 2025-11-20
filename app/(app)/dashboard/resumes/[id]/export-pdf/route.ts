@@ -110,21 +110,21 @@ export async function GET(
     // Handle structured resume format
     const structuredResume = resume as Extract<typeof resume, { header?: unknown }>;
     
-    // Header info - Professional formatting matching LaTeX style
+    // Header info - EXACT formatting matching LaTeX template (\Huge \scshape)
     if (structuredResume.header) {
       const header = structuredResume.header;
       if (header.name) {
-        // Large, bold, centered name (matching \Huge \scshape in LaTeX)
-        doc.setFontSize(20); // Large size
+        // Large, bold, centered name - matching \textbf{\Huge \scshape} from LaTeX
+        doc.setFontSize(24); // \Huge is ~24pt
         doc.setFont(pdfFont, "bold");
-        const nameText = header.name.toUpperCase(); // Small caps effect
+        const nameText = header.name.toUpperCase(); // Small caps effect (\scshape)
         const nameWidth = doc.getTextWidth(nameText);
         doc.text(nameText, (pageWidth - nameWidth) / 2, yPos); // Centered
-        yPos += 0.15; // Small space after name
+        yPos += 0.12; // \vspace{1pt} equivalent
       }
       if (header.email || header.phone || (header.links && header.links.length > 0)) {
-        // Contact info on one line with separators
-        doc.setFontSize(fontSize - 1); // Small font
+        // Contact info on one line with $|$ separators (matching LaTeX exactly)
+        doc.setFontSize(9); // \small is ~9pt
         doc.setFont(pdfFont, "normal");
         const contactParts: string[] = [];
         if (header.phone) contactParts.push(header.phone);
@@ -135,64 +135,77 @@ export async function GET(
             contactParts.push(url);
           });
         }
-        const contactText = contactParts.join(" | ");
+        const contactText = contactParts.join(" | "); // $|$ separator
         const contactWidth = doc.getTextWidth(contactText);
         doc.text(contactText, (pageWidth - contactWidth) / 2, yPos); // Centered
-        yPos += 0.2; // Space after contact
+        yPos += 0.15; // Space after contact
       }
-      yPos += 0.1; // Extra space before sections
+      yPos += 0.1; // Space before sections
     }
 
-    // Education - Professional two-column format
+    // Education - EXACT format matching \resumeSubheading from LaTeX template
     if (structuredResume.education && structuredResume.education.length > 0) {
       if (yPos > maxY - lineHeight * 2) return;
-      // Section header with underline effect
-      doc.setFontSize(fontSize + 1);
+      // Section header - matching \section formatting (\scshape\raggedright\large with underline)
+      doc.setFontSize(12); // \large is ~12pt
       doc.setFont(pdfFont, "bold");
       doc.setTextColor(0, 0, 0);
       doc.text("EDUCATION", margin, yPos);
-      // Draw underline
+      // Draw underline matching \titlerule
       doc.setLineWidth(0.5);
       doc.line(margin, yPos + 0.02, pageWidth - margin, yPos + 0.02);
-      yPos += 0.12; // Compact spacing
+      yPos += 0.1; // \vspace{-5pt} after section
       
       structuredResume.education.forEach((edu) => {
         if (yPos > maxY - lineHeight * 1.5) return;
-        // Two-column layout: Institution/Location on left, Dates on right
-        doc.setFontSize(fontSize);
+        yPos += 0.02; // \vspace{-2pt} before item
+        
+        // Two-column layout matching \resumeSubheading exactly:
+        // Line 1: \textbf{Institution} (left) | Dates (right)
+        doc.setFontSize(11); // Base font size
         doc.setFont(pdfFont, "bold");
-        const institutionText = `${edu.institution}${edu.location ? `, ${edu.location}` : ""}`;
+        const institutionText = edu.institution;
         doc.text(institutionText, margin, yPos);
         
         const dateText = `${edu.start_date || ""} -- ${edu.end_date || "Present"}`;
         const dateWidth = doc.getTextWidth(dateText);
         doc.text(dateText, pageWidth - margin - dateWidth, yPos);
-        yPos += 0.08; // Tight spacing
+        yPos += 0.08; // Line spacing
         
-        // Degree on second line, italic
-        doc.setFont(pdfFont, "normal");
-        doc.setFontSize(fontSize);
+        // Line 2: \textit{\small Location} (left) | \textit{\small} (right)
+        doc.setFont(pdfFont, "italic");
+        doc.setFontSize(9); // \small
+        const locationText = edu.location || "";
+        doc.text(locationText, margin, yPos);
+        yPos += 0.08; // Line spacing
+        
+        // Line 3: \textit{\small Degree} (left) | \textit{\small Dates} (right) - but dates already shown
+        doc.setFont(pdfFont, "italic");
+        doc.setFontSize(9); // \small
         doc.text(edu.degree, margin, yPos);
-        yPos += 0.12; // Space between entries
+        yPos += 0.1; // \vspace{-7pt} after subheading
       });
       yPos += 0.05; // Space after section
     }
 
-    // Experience - Professional two-column format with bullets
+    // Experience - EXACT format matching \resumeSubheading + \resumeItem from LaTeX
     if (structuredResume.experience && structuredResume.experience.length > 0) {
       if (yPos > maxY - lineHeight * 2) return;
-      // Section header with underline
-      doc.setFontSize(fontSize + 1);
+      // Section header
+      doc.setFontSize(12); // \large
       doc.setFont(pdfFont, "bold");
       doc.text("EXPERIENCE", margin, yPos);
       doc.setLineWidth(0.5);
       doc.line(margin, yPos + 0.02, pageWidth - margin, yPos + 0.02);
-      yPos += 0.12;
+      yPos += 0.1;
       
       structuredResume.experience.forEach((exp) => {
         if (yPos > maxY - lineHeight * 1.5) return;
-        // Two-column: Title on left, Dates on right
-        doc.setFontSize(fontSize);
+        yPos += 0.02; // \vspace{-2pt} before item
+        
+        // \resumeSubheading format:
+        // Line 1: \textbf{Title} (left) | Dates (right)
+        doc.setFontSize(11);
         doc.setFont(pdfFont, "bold");
         doc.text(exp.title, margin, yPos);
         const dateText = `${exp.start_date || ""} -- ${exp.end_date || "Present"}`;
@@ -200,97 +213,102 @@ export async function GET(
         doc.text(dateText, pageWidth - margin - dateWidth, yPos);
         yPos += 0.08;
         
-        // Organization/Location on second line, italic
+        // Line 2: \textit{\small Organization} (left) | \textit{\small Location} (right)
         doc.setFont(pdfFont, "italic");
-        doc.setFontSize(fontSize - 1);
-        const orgText = `${exp.organization}${exp.location ? `, ${exp.location}` : ""}`;
-        doc.text(orgText, margin, yPos);
-        yPos += 0.1;
+        doc.setFontSize(9); // \small
+        doc.text(exp.organization, margin, yPos);
+        if (exp.location) {
+          const locWidth = doc.getTextWidth(exp.location);
+          doc.text(exp.location, pageWidth - margin - locWidth, yPos);
+        }
+        yPos += 0.1; // \vspace{-7pt} after subheading
         
-        // Bullets with compact spacing
+        // \resumeItemListStart - bullets with \resumeItem formatting
         doc.setFont(pdfFont, "normal");
-        doc.setFontSize(fontSize);
+        doc.setFontSize(9); // \small in \resumeItem
         exp.bullets.forEach((bullet) => {
           if (yPos > maxY - lineHeight) return;
           const bulletText = `• ${bullet}`;
-          const lines = doc.splitTextToSize(bulletText, contentWidth - 0.15);
-          doc.text(lines, margin + 0.15, yPos);
-          yPos += lines.length * 0.08; // Very tight spacing
+          const lines = doc.splitTextToSize(bulletText, contentWidth - 0.2);
+          doc.text(lines, margin + 0.2, yPos);
+          yPos += lines.length * 0.07; // \vspace{-2pt} per item - very tight
         });
-        yPos += 0.05; // Space between experiences
+        yPos += 0.03; // \vspace{-5pt} after item list
       });
       yPos += 0.05;
     }
 
-    // Projects - Professional format with tech stack
+    // Projects - EXACT format matching \resumeProjectHeading from LaTeX
     if (structuredResume.projects && structuredResume.projects.length > 0) {
       if (yPos > maxY - lineHeight * 2) return;
-      // Section header with underline
-      doc.setFontSize(fontSize + 1);
+      // Section header
+      doc.setFontSize(12); // \large
       doc.setFont(pdfFont, "bold");
       doc.text("PROJECTS", margin, yPos);
       doc.setLineWidth(0.5);
       doc.line(margin, yPos + 0.02, pageWidth - margin, yPos + 0.02);
-      yPos += 0.12;
+      yPos += 0.1;
       
       structuredResume.projects.forEach((project) => {
         if (yPos > maxY - lineHeight * 1.5) return;
-        // Two-column: Project Name | Tech Stack on left, Dates on right
-        doc.setFontSize(fontSize);
+        yPos += 0.02; // \vspace{-2pt} before item
+        
+        // \resumeProjectHeading format: \textbf{Name} $|$ \emph{Tech Stack} (left) | Dates (right)
+        doc.setFontSize(9); // \small in \resumeProjectHeading
         doc.setFont(pdfFont, "bold");
         const projName = project.name;
         const techStack = project.tech_stack && project.tech_stack.length > 0 
-          ? ` | ${project.tech_stack.join(", ")}`
+          ? ` | ${project.tech_stack.join(", ")}` // Italic in LaTeX (\emph)
           : "";
         const projTitle = `${projName}${techStack}`;
         doc.text(projTitle, margin, yPos);
         const dateText = `${project.start_date || ""} -- ${project.end_date || "Present"}`;
         const dateWidth = doc.getTextWidth(dateText);
         doc.text(dateText, pageWidth - margin - dateWidth, yPos);
-        yPos += 0.1;
-        doc.setFont(pdfFont, "normal");
+        yPos += 0.1; // \vspace{-7pt} after heading
         
-        // Bullets with compact spacing
+        // \resumeItemListStart - bullets
+        doc.setFont(pdfFont, "normal");
+        doc.setFontSize(9); // \small in \resumeItem
         project.bullets.forEach((bullet) => {
           if (yPos > maxY - lineHeight) return;
           const bulletText = `• ${bullet}`;
-          const lines = doc.splitTextToSize(bulletText, contentWidth - 0.15);
-          doc.text(lines, margin + 0.15, yPos);
-          yPos += lines.length * 0.08; // Very tight spacing
+          const lines = doc.splitTextToSize(bulletText, contentWidth - 0.2);
+          doc.text(lines, margin + 0.2, yPos);
+          yPos += lines.length * 0.07; // \vspace{-2pt} per item
         });
-        yPos += 0.05; // Space between projects
+        yPos += 0.03; // \vspace{-5pt} after item list
       });
       yPos += 0.05;
     }
 
-    // Technical Skills - Professional format with categories
+    // Technical Skills - EXACT format matching LaTeX template
     if (template.layout.showSkills && structuredResume.technical_skills && yPos < maxY - lineHeight * 2) {
-      // Section header with underline
-      doc.setFontSize(fontSize + 1);
+      // Section header
+      doc.setFontSize(12); // \large
       doc.setFont(pdfFont, "bold");
       doc.text("TECHNICAL SKILLS", margin, yPos);
       doc.setLineWidth(0.5);
       doc.line(margin, yPos + 0.02, pageWidth - margin, yPos + 0.02);
-      yPos += 0.12;
-      doc.setFont(pdfFont, "normal");
-      doc.setFontSize(fontSize);
+      yPos += 0.1;
       
-      // Format as "Category: skill1, skill2, skill3"
+      // Format matching: \small{\item{ \textbf{Category}: skills \\ \textbf{Category2}: skills2 }}
+      doc.setFont(pdfFont, "normal");
+      doc.setFontSize(9); // \small
+      
       const skillLines: string[] = [];
       Object.entries(structuredResume.technical_skills).forEach(([category, skills]) => {
         if (skills && skills.length > 0) {
-          skillLines.push(`\\textbf{${category}}: ${skills.join(", ")}`);
+          // \textbf{Category}: skills format
+          skillLines.push(`${category}: ${skills.join(", ")}`);
         }
       });
       
-      skillLines.forEach((line) => {
-        if (yPos > maxY - lineHeight) return;
-        // Remove LaTeX commands for PDF (they're for LaTeX export)
-        const cleanLine = line.replace(/\\textbf\{([^}]+)\}/g, "$1");
-        const lines = doc.splitTextToSize(cleanLine, contentWidth);
-        doc.text(lines, margin, yPos);
-        yPos += lines.length * 0.08; // Tight spacing
-      });
+      // Single item with line breaks (matching \item{ ... \\ ... })
+      const skillsText = skillLines.join(" \\ ");
+      const lines = doc.splitTextToSize(skillsText, contentWidth);
+      doc.text(lines, margin, yPos);
+      yPos += lines.length * 0.08;
     }
   } else {
     // Handle standard resume format
