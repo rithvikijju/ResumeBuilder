@@ -61,24 +61,23 @@ export async function GET(
   }
 
   // Compile LaTeX to PDF using LaTeX.Online API
-  // This service compiles LaTeX to PDF via HTTP API
+  // This is a free service that compiles LaTeX to PDF
   try {
-    // Use latexonline.cc API - it accepts LaTeX source and returns PDF
     const compileResponse = await fetch("https://latexonline.cc/compile", {
       method: "POST",
       headers: {
-        "Content-Type": "text/plain; charset=utf-8",
+        "Content-Type": "text/plain",
       },
       body: latex,
     });
 
-    if (!compileResponse.ok || !compileResponse.headers.get("content-type")?.includes("pdf")) {
-      const errorText = await compileResponse.text().catch(() => "Unknown error");
+    if (!compileResponse.ok) {
+      const errorText = await compileResponse.text();
       console.error("LaTeX compilation failed:", errorText);
       
       // Fallback: return LaTeX file with instructions
       return new Response(
-        `LaTeX compilation service unavailable. Please compile the LaTeX file manually using Overleaf (https://www.overleaf.com) or a local LaTeX installation.\n\n${latex}`,
+        `LaTeX compilation service unavailable. Please compile the LaTeX file manually using Overleaf or a local LaTeX installation.\n\n${latex}`,
         {
           headers: {
             "Content-Type": "text/plain",
@@ -90,11 +89,6 @@ export async function GET(
 
     const pdfBuffer = await compileResponse.arrayBuffer();
     const pdfBytes = Buffer.from(pdfBuffer);
-    
-    // Verify it's actually a PDF (starts with %PDF)
-    if (pdfBytes.length < 4 || pdfBytes.toString("ascii", 0, 4) !== "%PDF") {
-      throw new Error("Response is not a valid PDF");
-    }
 
     const safeFilename = (data.title || "resume").replace(/[^a-z0-9]/gi, "_");
     const originalFilename = data.title || "resume";

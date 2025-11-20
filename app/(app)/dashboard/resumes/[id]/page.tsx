@@ -4,6 +4,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ResumeSchema, type ResumePayload } from "@/lib/resume/schema";
 import { TemplateRenderer } from "@/components/resume/template-renderer";
 import { getTemplateById } from "@/lib/resume/templates";
+import { PdfExportButton } from "@/components/resume/pdf-export-button";
+import { loadLatexTemplate, fillLatexTemplate } from "@/lib/resume/latex-templates";
 
 type ResumeDetailProps = {
   params: Promise<{ id: string }>;
@@ -47,6 +49,25 @@ export default async function ResumeDetailPage({ params }: ResumeDetailProps) {
   const templateId = (data as any).template_id || "cs";
   const template = await getTemplateById(templateId);
 
+  // Generate LaTeX source for client-side compilation
+  let latexSource = "";
+  const isStructured = "header" in resume || "experience" in resume || "education" in resume;
+  if (isStructured && template) {
+    try {
+      const templateContent = loadLatexTemplate(templateId);
+      const structuredResume = resume as Extract<typeof resume, { header?: unknown }>;
+      latexSource = fillLatexTemplate(templateContent, {
+        header: structuredResume.header as any,
+        education: structuredResume.education as any,
+        experience: structuredResume.experience as any,
+        projects: structuredResume.projects as any,
+        technical_skills: structuredResume.technical_skills as any,
+      });
+    } catch (error) {
+      console.error("Failed to generate LaTeX for client export:", error);
+    }
+  }
+
   return (
     <div className="space-y-8">
       <header className="space-y-2">
@@ -80,13 +101,21 @@ export default async function ResumeDetailPage({ params }: ResumeDetailProps) {
           >
             Back to list
           </Link>
-          <a
-            href={`/dashboard/resumes/${id}/export-pdf`}
-            download
-            className="inline-flex items-center rounded-lg bg-blue-800 px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-blue-700 shadow-sm hover:shadow"
-          >
-            Export PDF
-          </a>
+          {latexSource ? (
+            <PdfExportButton
+              resumeId={id}
+              latexSource={latexSource}
+              filename={data.title || "resume"}
+            />
+          ) : (
+            <a
+              href={`/dashboard/resumes/${id}/export-pdf`}
+              download
+              className="inline-flex items-center rounded-lg bg-blue-800 px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-blue-700 shadow-sm hover:shadow"
+            >
+              Export PDF
+            </a>
+          )}
           <a
             href={`/dashboard/resumes/${id}/export-latex`}
             download
